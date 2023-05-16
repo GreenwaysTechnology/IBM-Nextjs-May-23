@@ -541,7 +541,72 @@ export default function DashBoard() {
 
 app/dashboard/settings/page.js     ===> http://localhost:3000/dashboard/settings
 ....................................................................................
+			Routing core concepts
+....................................................................................
 
+Inside the app directory, folders are used to define routes.
+
+Each folder represents a "route segment" that maps to a "URL" segment. To create nested route, you can nest folders inside each other.
+
+	localhost:3000 /     dashboard /settings
+		       |        |          |
+		 Root segment  Segment     leaf Segment
+
+How to create segments(eiether root/segement/leaf)?
+  A special file called page.js to make route segments publicly accessible.
+
+if you different name other than page.js , it will not be avaible for public access.
+
+ app/dashboard/config/myconfig.js
+
+http://localhost:3000/dashboard/config/myconfig
+.....................................................................................
+			   Creating UI
+.....................................................................................
+
+Special file conventions are used to create UI for each route segment.
+
+File convention
+pages -  page.js
+layouts - layout.js
+routes   - route.js - server side end points
+templates  - template.js
+loading   ----loading.js
+errors    -----error.js,global-error.js,not-found.js 
+..............................................................................
+Roles of Folders and files:
+..........................
+
+1.folder are used to define routes. A route is a single path of nested folders, following the hierarchy from the the root folder down to a final leaf folder that includes a page.js file
+
+2.Files are used to create UI that is shown the route segment
+....................................................................................
+
+page.js :  create the unique UI of a route and make the path publicly accessible
+  -route.js : create server side apis/endpoints for a route
+
+layout.js:
+  Create shared UI for a segement and its children.
+  A layout wraps a page or child segement.
+ -template.js
+     Similar to layout.js execpt  a new component instance is mounted on navigation.
+loading.js
+   To show progress bar while loading ui, it uses reac Suspense boundary.
+ 
+error.js
+  to handle ui errors,internally it uses error boundary
+  ->global-errors.js 
+      catching errors in the layout layer level
+  ->not-found.js
+        this is shown when if there is no url segment matches...
+
+
+
+   
+
+
+			
+			
 
 
 
