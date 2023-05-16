@@ -165,12 +165,382 @@ Next js uses "rust based build system" where as react uses web pack build ....
 4.Rendering - Client side rendering(traditional ajax) + server side rendering
 6.Styling
 7.Type script is another language of choice building strongly typed server side apps
+8.API Develovement
 ...................................................................................
 			 Next app setup 
 ....................................................................................
 
+Next app technologies:
+
+1.React
+  It is free and opensource front-end javascript lib for building user interfaces
+
+2.Turbopack
+   An intcremental bundler optimized for javascript and typescript written in Rust and built into Next js
+
+3.Speedy web compiler
+   A Extensible to Rust based platform for the next generation of fast developer tools, and can be used for both compilation and bundling.
+
+4.Vercel platform
+   Vercel is the company who created next js, they are providing a platform to deploy applications in cloud, server less env.
+
+.....................................................................................
+Installing Next infrastructure:
+
+System Req:
+ ->Node js 16.8 or later
+ ->OS - it can be windows, mac or Linux are supported
+
+Two types of installation
+1.Automatic installation
+   Which setps everything automatically for you.
+
+npx create-next-app@latest
+Need to install the following packages:
+  create-next-app@13.4.2
+Ok to proceed? (y) y
+√ What is your project named? ... my-app
+√ Would you like to use TypeScript with this project? ... No / Yes
+√ Would you like to use ESLint with this project? ... No / Yes
+√ Would you like to use Tailwind CSS with this project? ... No / Yes
+√ Would you like to use `src/` directory with this project? ... No / Yes
+√ Use App Router (recommended)? ... No / Yes
+√ Would you like to customize the default import alias? ... No / Yes
+Creating a new Next.js app in E:\session\IBM\2023\May\NextJS\my-app.
+
+Using npm.
+
+Initializing project with template: app-tw
 
 
+Installing dependencies:
+- react
+- react-dom
+- next
+- tailwindcss
+- postcss
+- autoprefixer
+
+2.Manual Installation
+ npm install next@latest react@latest react-dom@lastest
+
+
+package.json
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "autoprefixer": "10.4.14",
+    "next": "13.4.2",
+    "postcss": "8.4.23",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tailwindcss": "3.3.2"
+  }
+}
+
+scripts:
+ dev: runs next dev to start next.js in development mode
+ build: runs next build to build the application for production usage
+ start: runs next start to start a next apps in production mode.
+ lint: runs next lint to set up next built in eslint configuration.
+
+
+next.config.js
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
+
+module.exports = nextConfig
+
+ This is going to be used for configuring the next apps.
+
+
+src/app
+  having basic start up files
+
+layout.js
+page.js
+   landing page is available inside layout.js
+
+public:
+  stores static assests such images,fonts,documents
+  public dir are accessed inside code using the base URL "/".
+
+
+How to start dev server?
+
+ npm run dev
+....................................................................................
+			 Root File/Root Component
+.....................................................................................
+
+In react , there is index.html which is built in read made file, inside that file only we create DOM tree and we insert
+
+index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>React App</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root">
+      
+    </div>
+  </body>
+</html>
+
+here div element is root container element.inside we create DOM tree and insert which is called SPA
+  HTML elements are created at client only.
+
+Where as SSR , index.html and other html files are created server side.
+
+How to create index.html in Next app?
+
+ Next provides a root Component called "RootLayout"
+// import './globals.css'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata = {
+  title: 'Create Next App',
+  description: 'Generated by create next app',
+}
+
+// export default function RootLayout({ children }) {
+//   return (
+//     <html lang="en">
+//       <body className={inter.className}>{children}</body>
+//     </html>
+//   )
+// }
+export default function RootLayout(props) {
+  return <html lang="en">
+    <body>
+      <h1>Welcome to Next app</h1>
+    </body>
+  </html>
+}
+
+Here the component name can be any thing "RootLayout" or "MyLayout" "AppLayout"
+but the next is going to identify the root component based on file names
+
+
+Arrow functions:
+const RootLayout = ({ children }) => {
+  return <html lang="en">
+    <body className={inter.className}>{children}</body>
+  </html>
+}
+export default RootLayout;
+....................................................................................
+			 React Foundation for Next Js
+....................................................................................
+
+React is based on Component driven Architecture.
+
+What is Component?
+ Component is object.
+ Since Component is object we can reuse.
+ Component represents a User interface.
+
+There two types of components
+
+1.client side components
+  Components are used in the single page webs 
+2.server side components
+  Components are used in the server side.
+
+Server and clients components allow developers to build apps that span the server and client ,coimbining the rich interactivity of client side apps with the improved performance of traditional server rendering.
+
+
+Thinking in Server Components:
+..............................
+
+React was created for building SPAs.
+but how react changed the way we think about building UI,React server components  introduce new mental model for building hybrid apps that leverage the server and client.
+
+=>Instead of React rendering your whole app client-side(such as in the case of Single Page applications).
+ React now gives you the flexibility to choose where to render your components based on "their purpose"
+
+Why server Components?
+......................
+
+1.Performance:
+1.1. Server components allow developers to better leverage server infrastructure. for      eg large dependencies that previously would impact the javascript bundle size on      the client can instead remain entirely on the server.
+
+1.2.They make write a react apps feels similar like jsp and servers,aspx,php or ruby on   rails but the power and flexibility of react and the components model for   templating UI
+
+1.3.When server components the inital page load is faster,client side javascript bundle is reduced.
+
+1.4.We can able caching 
+
+1.5.if you want add client side interactivity we can use "client components"
+
+2.Progressive:
+...............
+1.When a route(index page) is loaded with Next.js, the inital HTML is rendered on the server.
+2.The HTML is then progressively enchanced in the browser, allowing the client to take over the application and add interactivity.
+
+.....................................................................................
+				Client Components
+.....................................................................................
+Client components enable you to add interactivity in the client side to your application.
+
+"In Next.js" they are pre-rendered on the server and hydrated on the client.
+
+You are creating a component , how to say this component is client side and server side..
+
+export default function Greeting(props){
+	
+	return <>
+		<h1>Hello Next</h1>
+             <>
+
+}
+
+How to define that the above code, must be executed in the server or client
+
+'use client'  // "use Client" directive
+
+export default function Greeting(props){
+	
+	return <>
+		<h1>Hello Next</h1>
+             <>
+
+}
+.....................................................................................
+  	When to use server side component and when to use client side component
+.....................................................................................
+
+what do you need?                         Server    client 
+					component  component
+
+1.Fetch data                               yes       no
+
+2.Access back resources(directly)          yes       no
+
+3.Keep security related info(api keys)     yes       no
+
+
+4.large bundle dependencies/reduce client
+  js                                       yes       no
+
+5.Add interactivity and event listeners    no        yes
+
+6.Use state and life cycles hooks          no        yes
+
+7.Use browser only api(storage)            no        yes
+
+8.Custom hooks that depend on state,effects
+  browser apis                             no        yes
+
+9.if you write "class components"          no        yes
+
+
+Patterns:
+........
+1.Moving clients components to the leaves(tree):
+..............................................
+
+if you want to improve perfomance and also add strong security we recommend moving client components to the leaves of your component tree where ever possible.
+
+if you have layout having static data  like logo,links and an interactive search bar that uses state.
+
+Instead of making the whole layout a client component, move the interactive log to client component eg <SearchBar/> and keep your layout as Server component.
+
+2.Composing Client and Server components:
+..........................................
+
+Server and clients components can be coimbed in the same component tree.
+
+Process behind server and client components:
+............................................
+
+=>On the server, React renders all Server components before sending the result to the client
+   =>This includes server components nested inside client components
+   =>What if the client components are encounted in this stage, it will be skipped.
+
+=>On the client, React renders Client Components and slots in the rendered result of server Compoents
+   =>if any server components are nested inside a client,their rendered content will placed correctly the client component during client compoenent rendering
+
+In Next js, during the inital page load, both the rendered result of server components from the above step and client components are pre-rendered on the server as plain html to produce a faster initall page load.
+.....................................................................................
+
+"Recommended Pattern: Passing Server components to client components as prop"
+.....................................................................................
+			  Pages & Routing
+.....................................................................................
+
+The core of next apps are routing.
+The skeleton of every app is routing.
+
+Pages:
+......
+  A page is UI that is unique to a route.
+  You can define pages by exporting a component from page.js file to make the route   publicly accessible
+  
+Create first Page by adding a page.js file inside app directory. 
+
+By default routing is enabled,automatically, unlike react spas you dont need to specify the routing.
+
+Note: in next js you dont need to configure any routers, routers are mapped against files
+
+http://localhost:3000/  =>Root URL(route) => page.js
+
+  By default root path is mapped against page.js
+
+src/app/page.js
+
+export default function HomePage() {
+    return <h1>
+        Hello,Welcome to Next js
+    </h1>
+}
+
+app/page.js  ----> /
+
+How to define new route and render accordingly?
+
+app/about/page.js   => /about
+   
+export default function About(){
+    return <h1>About us</h1>
+}
+
+app/dashboard/page.js  ====> /dashboard
+
+
+export default function DashBoard() {
+    return <h1>Dashboard</h1>
+}
+
+app/dashboard/settings/page.js     ===> http://localhost:3000/dashboard/settings
+....................................................................................
 
 
 
