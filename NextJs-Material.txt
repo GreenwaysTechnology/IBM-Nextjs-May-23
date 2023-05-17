@@ -282,7 +282,7 @@ How to start dev server?
 			 Root File/Root Component
 .....................................................................................
 
-In react , there is index.html which is built in read made file, inside that file only we create DOM tree and we insert
+In react , there is index.html which is built in ready made file, inside that file only we create DOM tree and we insert
 
 index.html
 <!DOCTYPE html>
@@ -599,30 +599,287 @@ error.js
       catching errors in the layout layer level
   ->not-found.js
         this is shown when if there is no url segment matches...
+....................................................................................
+			   Component hierachy
+....................................................................................
+
+layout.js
+  Every next app must have one layout.js which define root layout.
+
+template.js
+   Templates are similar to layouts that wrapy each child layout or page.
+
+error.js 
+   React Error boundary - layout level errors
+
+ErrorBoundary:
+Error boundaries are React components that catch JavaScript errors anywhere in their child component tree, log those errors, and display a fallback UI instead of the component tree that crashed. Error boundaries catch errors during rendering.
+
+loading.js
+   Which loads component in async manner
+   Components render sync manner.
+Lazy loading:
+  load components in delayed manner
+React lazy loading is done via Suspense Component
+
+not-found.js :React Error Boundary
+    This is component used to handle errors during component load/page
 
 
+page.js or nestlayout layout.js
+   Actual UI is displayed
 
+Component Structure/Hierarchy:
+..............................
+
+<Layout>
+   <Template>
+	<ErrorBoundary fallback={<Error/>}>
+	   <Suspense fallback={<Loading/>}>
+		<ErrorBoundary fallback={<NotFound/>}
+		    <Page/>	
+		<ErrorBoundary>
+           <Suspense>	
+        </ErrorBoundary>
+   </Template>	
+</Layout>
+....................................................................................
+			Nested Route component Hierachy
+....................................................................................
+app/
+ page.js
+ layout.js
+ not-found.js
+ template.js
+ loading.js
+ error.js
+ 
+dashboard
+  -layout.js
+  -error.js
+  -loading.js
+  
+<Layout>
+    <ErrorBoundary fallback={<Error/>}>
+	  <Suspense fallback={<Loading/>}>
+		<ErrorBoundary fallback={<NotFound/>}
+		    <Page/>	
+		<ErrorBoundary>
+           <Suspense>	
+        </ErrorBoundary>
    
+</Layout>
+
+app/
+ page.js
+ layout.js
+ not-found.js
+ template.js
+ loading.js
+ error.js
+ 
+dashboard
+  -layout.js
+  -error.js
+  -loading.js
+settings
+  -layout.js
+  -error.js
+  -loading.js
+  -page.js
 
 
+dashboard/settings
+  
+<Layout>
+    <ErrorBoundary fallback={<Error/>}>
+	  <Suspense fallback={<Loading/>}>
+	     <Layout> <!-- settings---!>
+		<ErrorBoundary fallback={<Error/>}>
+		    <Suspense fallback={<Loading/>}>
+			<Page/>
+		    </Suspense>
+		<ErrorBoundary>
+	     <Layout/>
+           <Suspense>	
+        </ErrorBoundary>
+   
+</Layout>
+
+...................................................................................
+   			 Linking and Navigation
+...................................................................................
+
+The Next.js router uses  "Server centric routing with client side navigation
+
+In old next versions there is pages dir which uses client side routing, the App router uses "server centric routing" to algin server components and data fetching on the server. with server centric routing, the client does not have to  download to route map and the request for compoentents can be use to look up routes.
 			
+Client side Navigation or client Routing:
+..........................................
+ The pages are transfered from one page to another page using hyper links or there are js apis like router.push method.
+ Client navigation done by the browser apis
+ Server side navigation done by the server
 			
+There are two types of components for naviation.
+
+1.Link compoenent
+2.useRouter Hook
+
+Link Components
+Props
+ ->href -required
+ ->replace 
+ -prefetch
+ -shallow
+ -local
+
+Link Eg:
+
+src/app/page.js
+import Link from 'next/link'
+import styles from './page.module.css'
+
+export default function Home() {
+  return (
+    <main className={styles.main}>
+      <div className={styles.description}>
+        <nav>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/products">Products</Link>
+        </nav>
+      </div>
+    </main>
+  )
+}
+
+src/app/dashboard/page.js
+export default function DashboardPage() {
+
+    return <div>
+        <h1>Dashboard</h1>
+    </div>
+}
+src/app/products/page.js
+export default function ProductsPage() {
+    return <div>
+        <h1>Products</h1>
+    </div>
+}
+.................................................................................
+			 Dynamic Routes
+.................................................................................
+
+Url Pattern 
+  /products/1
+  /users/2
+
+When you dont know the exact segment names ahead of time and want to create routes from dynamic data, you can use Dynamic segments that are filled in the run time or prerendered at build time.
+
+Syntax:
+How to create dynamic segment?
+  A segment is created by wrapping a folder's name in square brackets
+
+ [folderName] for eg [id] [slug] [name] [city]
+
+slug is convetional name used in next js to denote dynamic path.
+
+slug:
+ A slug is the part of a URL that identifies a particular page on a website in an easy-to-read form. In other words, it's the part of the URL that explains the page's content. For this article, for example, the URL is https://yoast.com/slug, and the slug simply is 'slug'
+
+src/app/blog/[slug]
+ |
+
+src,app,blog,[slug] all are folders only
+
+src/app/blog/[slug]
+  -page.js
+  -layout.js
+  -template.js
+ etc...   
+
+src/app/blog/[slug]
+  page.js
+
+export default function Blog(props) {
+    return <div>
+        <h1>Blog</h1>
+    </div>
+}
+Testing:
+ http://localhost:3000/blog/1
+ http://localhost:3000/blog/2
+ http://localhost:3000/blog/3
+ http://localhost:3000/blog/4
+
+Reading Dynamic segemnts can be read inside Page,layout,route,geneateMetaData functions.
+Dynamic Segments are available inside page via props.params 
+
+props.params will return
+  {folderName:1}
+
+read: props.params.slug 
+.....................................................................................
+			 Catch-all Segments
+....................................................................................
+Dynamic segements can be extended to catch-all subsequent segements by adding an ellipsis inside the brackets [...FolderName]
+
+eg:
+ app/shop/[...slug]/page.js will match the url pattern like below
+    /shop/cloths 
+    /shop/cloths/tops
+    /shops/cloths/tops/t-shirts 
+    /shop/food
+    /shop/food/veg
+
+Route                                    url                     params
+app/shop/[...slug]/page.js		/shop/a                 { slug: ['a'] }
+
+app/shop/[...slug]/page.js		/shop/a/b               { slug: ['a','b'] }
 
 
+eg:
+src/app/shop/[...slug]/page.js
+
+export default function Shop(props) {
+    const nestedParams = props.params.slug
+    return <div>
+        <h1>Shop</h1>
+        {nestedParams}
+    </div>
+}
+Testing:
+http://localhost:3000/shop/cloths/tops/tshirts
+....................................................................................
+			Optional Catch-all Segments
+...................................................................................
+catch all segements can be made optional by including the parameter in double square brackets
+    [[...folderName]]
+eg:
+ /app/movie/[[...slug]]/page.js will match
+   
+    /movie
+    /movie/eng
+    /shop/eng/sciencefiction
 
 
+Route                                    url                     params
+app/movie/[[...slug]]/page.js		/movie                   {  }
 
+app/shop/[[...slug]]/page.js		/movie/eng              { slug: ['eng'] }
+....................................................................................
+			   React Components
+.....................................................................................
 
+React components are just represent UI.
 
+Next Components
+  Layouts and pages
 
+Page represents UI.
 
-
-
-
-
-
-
-
+export default function ShopPage(){ 
+        return <Product/>
+}
 
 
 
