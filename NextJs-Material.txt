@@ -471,7 +471,7 @@ if you want to improve perfomance and also add strong security we recommend movi
 
 if you have layout having static data  like logo,links and an interactive search bar that uses state.
 
-Instead of making the whole layout a client component, move the interactive log to client component eg <SearchBar/> and keep your layout as Server component.
+Instead of making the whole layout a client component, move the interactive logic to client component eg <SearchBar/> and keep your layout as Server component.
 
 2.Composing Client and Server components:
 ..........................................
@@ -880,41 +880,473 @@ Page represents UI.
 export default function ShopPage(){ 
         return <Product/>
 }
+....................................................................................
+		 Server components and clients components
+....................................................................................
 
+Server components:
+ =>Server components are rendered in the server side
 
+Using useState hook inside component:
 
+src/app/counter/page.js
+import Increment from "./increment";
 
+export default function CounterPage(props){
+    return <div>
+        <h1>Counter Page</h1>
+        <Increment/>
+    </div>
+}
+
+src/app/counter/increment.js
+import { useState } from "react"
+
+export default function Increment() {
+    const [count, setCount] = useState(10)
+    return <>
+        <h2>Increment : {count}</h2>
+    </>
+}
+
+http://localhost:3000/counter
+
+You will encounter error like below
+
+Failed to compile
+
+Next.js is up to date
+./src\app\counter\increment.js
+ReactServerComponentsError:
+
+You're importing a component that needs useState. It only works in a Client Component but none of its parents are marked with "use client", so they're Server Components by default.
+
+   ,-[E:\session\IBM\2023\May\NextJS\client-servercomponents\src\app\counter\increment.js:1:1]
+ 1 | import { useState } from "react"
+   :          ^^^^^^^^
+ 2 | 
+ 3 | export default function Increment() {
+ 3 |     const [count, setCount] = useState(10)
+   `----
+
+Maybe one of these should be marked as a client entry with "use client":
+./src\app\counter\increment.js
+./src\app\counter\page.js
  
+The above is called "Client Code" , so this code cant be compiled in server
+
+By default every component is "Server is component".
+Server components 
+  page,layout,templates,loading....
+
+Client components
+  There is directive 'use client'; 
 
 
 
 
+src/app/counter/counter.js | counter.jsx
+
+'use client';
+
+import { useState } from "react"
+
+export default function Increment() {
+    const [count, setCount] = useState(10)
+    return <>
+        <h2>Increment : {count}</h2>
+        <button onClick={() => setCount(count + 1)}>+</button>
+    </>
+}
+
+//custom Hook -- useState,browser api,useEffect,listeners
+
+Client side code will not trigger page reloads for every mutation....
+....................................................................................
+
+Even simple listerners also considered Client Side code
+
+'use client';
 
 
+export default function Alert() {
+    return <>
+        <button onClick={() => alert('Hello,Next j')}>Alert</button>
+    </>
+}
+
+Pointers:
+..........
+=>Compoenents in the server moudule graph(component tree) are guaranteed to be ony rendered on the server.
+=>Components in the client module graph(compoent tree) are primarily rendered on the client but with Next.js they can also be re-rendered on the server and hydrated on the client. precompile as plain/raw html and execute as dom tree in the client.
+
+=>'use Client' directive must be top of a file before any imports
+....................................................................................
+			Client Component uses another Client Components
 
 
+src/app/review/reviews.js
+
+import Like from "./like"
+import Dislike from "./dislike"
+
+//client component
+export default function Reviews(){
+    return <>
+        <Like/>
+        <Dislike/>
+    </>
+}
+
+src/app/review/like.js
+
+ 'use client';
+
+import { useState } from "react"
+
+//client component
+export default function Like(){
+    const [count, setCount] = useState(10)
+    return<>
+        <h1>Like {count}</h1>
+    </>
+}
+
+src/app/review/dislike.js
+ 'use client';
+
+import { useState } from "react"
+
+//client component
+export default function Dislike() {
+    const [count, setCount] = useState(10)
+    return <>
+        <h1>Dislike {count} </h1>
+    </>
+}
+
+if you use clients inside another clients, you can use "use client" directive only top level /parent component only.
+
+eg:
+ 'use client';
+
+import Like from "./like"
+import Dislike from "./dislike"
+
+//client component
+export default function Reviews(){
+    return <>
+        <Like/>
+        <Dislike/>
+    </>
+}
+//  'use client';
+
+import { useState } from "react"
+
+//client component
+export default function Dislike() {
+    const [count, setCount] = useState(10)
+    return <>
+        <h1>Dislike {count} </h1>
+    </>
+}
+//  'use client';
+
+import { useState } from "react"
+
+//client component
+export default function Like(){
+    const [count, setCount] = useState(10)
+    return<>
+        <h1>Like {count}</h1>
+    </>
+}
+.....................................................................................
+Patterns:
+1.Server components has client Compoents - discussed already
+2.Clients Components has another client compoents.-discussed already
+3.Client Component has server Component			 
+...................................................................................
+			Client Component has server Component
 
 
+src/app/client/page.js
+import ClientComponent from "./client";
+
+export default function ClientPage(){
+    return <>
+        <h1>Server Page</h1>
+        <ClientComponent/>
+    </>
+}
+
+src/app/client/client.jsx
+
+'use client';
+
+import ExampleServerComponent from "./server-component";
+
+export default function ClientComponent() {
+
+    return <>
+        <button onClick={() => {
+            alert('Client Compoent')
+        }}>Client</button>
+        <ExampleServerComponent/>
+    </>
+}
+src/app/client/server-component.js
+
+export default function ExampleServerComponent() {
+    return <>
+         <h1>ExampleServerComponent</h1>
+    </>
+}
+
+Note : this pattern is not recommened. Why
+
+if you render any server component inside client component, implicitly server compoent becomes client component. so that we will loose the purpose of server components.
+..................................................................................
+
+What if i want to render server components inside client compoents without lossing server compilation?
+   Pass Server Component  to Client component as "props"
+   
+src/app/client/page.js
+
+import ClientComponent from "./client";
+
+import ExampleServerComponent from "./server-component";
+
+export default function ClientPage() {
+    return <>
+        <h1>Server Page</h1>
+        {/* <ClientComponent/> */}
+
+        {/* Server Component passed as prop */}
+        <ClientComponent>
+            {/* Server Component passed as prop */}
+            <ExampleServerComponent />
+        </ClientComponent>
+    </>
+}
+
+src/app/client/server-component.js
+
+export default function ExampleServerComponent() {
+    return <>
+         <h1>ExampleServerComponent</h1>
+    </>
+}
+
+src/app/client/client.js
+'use client';
+
+//new pattern: server components are rendered inside client component as prop
+
+export default function ClientComponent(props) {
+    console.log(props)
+    return <>
+        <button onClick={() => {
+            alert('Client Compoent')
+        }}>Client</button>
+        {/* <ExampleServerComponent /> */}
+        {props.children}
+    </>
+}
+....................................................................................
+			 Dynamic Routing with Data and Links
+....................................................................................
+
+Data i am going to use mock data.
+
+src/app/posts/page.js
+import Link from 'next/link';
+import posts from './post-mock'
+
+export default function PostList() {
+    return (
+        <ul>
+            {posts.map((post) => (
+                <li key={post.id}>
+                    <Link href={`/blog/${post.id}`}>{post.title}</Link>
+                </li>
+            ))}
+        </ul>
+    );
+}
 
 
+src/app/blog/[slug]/page.js
+export default function BlogDetails(props){
+    return <div>
+        <h1>Blog Details {props.params.slug}</h1>
+    </div>
+}
+...................................................................................
+		 Programmetic navigation using "useRouter" Hook
+...................................................................................
 
+The useRouter Hook allows you to programmetically change routes inside client components.
 
+eg:
+src/app/photos/page.js
 
+import PhotoDetails from "./photo-detail";
 
+export default function PhotoPage(){
 
+    return <>
+        <h1>Photo Page App</h1>
+        <PhotoDetails/>
+    </>
+}
+src/app/photos/photo-detail.jsx
+'use client';
 
+import { useRouter } from "next/navigation";
 
+export default function PhotoDetails() {
+    const router = useRouter();
+    return <>
+        <h1>Photo Details</h1>
+        <button onClick={() => {
+            router.push('/posts')
+        }}>Post</button>
+    </>
+}
+.....................................................................................
+			Nested Layouts - Deep Dive
+.....................................................................................
 
+Use case 1: render the page inside root layout only
 
+src/app/layout.js
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
 
+root layout
+src/app/layout.js
+// import './globals.css'
+import { Inter } from 'next/font/google'
 
+const inter = Inter({ subsets: ['latin'] })
 
+export const metadata = {
+  title: 'Create Next App',
+  description: 'Generated by create next app',
+}
 
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
 
+nested layout
 
+src/app/blog/layout.js
 
+export default function BlogLayout({ children }) {
+    return <div id="bloglayout">
+        {children}
+    </div>
+}
 
+src/app/blog/settings/layout.js
 
+export default function BlogLayout({ children }) {
+    return <div id="bloglayout">
+        {children}
+    </div>
+}
+....................................................................................
+			 Routes Groups /Hidden Directories
+....................................................................................
+Directory structures 
 
+src/app/blog/page.js  => /blog
+
+src/app/blog/[slug]/page.js  => blog/1
+......................................................................
+
+src/app/blog/(folderName)/subfolders/page.js : Hidden Directories
+
+What is Route group?
+ The hierachy of the app folder maps directly to URL paths.
+
+ /app/blog/page.js =>/blog
+
+How ever, it is possible to break out of this pattern by creating a route group.
+
+Route Groups can be used to 
+
+-Organize routes without affecting the URL structure.
+-Opting-in specific route segement into a layout
+-Create multiple route layouts by spilting your apps
+
+Eg:
+src/app/(auth)
+  -login
+    -page.js
+  -signup
+    -page.js
+
+/signup/page.js
+export default function SignUp(){
+    return <h1>
+        SignUp Page
+    </h1>
+}
+/login/page.js
+export default function Login(){
+    return <h1>
+        Login Page
+    </h1>
+}
+
+URL Pattern:
+http://localhost:3000/signup
+http://localhost:3000/login
+You cant use like below , because it is hidden
+http://localhost:3000/auth/signup
+.....................................................................................
+			Route Groups and shared layout
+....................................................................................
+(auth)
+  layout.js
+This layout can be a shared layout....
+
+src/app/(auth)/layout.js
+
+export default function AuthLayout({ children }) {
+    return <div>
+        <h1>Auth Header</h1>
+        {children}
+    </div>
+}
+
+http://localhost:3000/logout
+
+Auth Header
+Logout
+...................................................................................
+		sharing layouts under hidden directories and nested layout
+
+src/app/(auth)/login/layout.js
+
+export default function LoginLayout({ children }) {
+    return <div>
+        <h1>Login Header</h1>
+        {children}
+    </div>
+}
+.....................................................................................
 
 
