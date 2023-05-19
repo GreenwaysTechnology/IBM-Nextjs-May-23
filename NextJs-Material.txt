@@ -943,8 +943,6 @@ Client components
   There is directive 'use client'; 
 
 
-
-
 src/app/counter/counter.js | counter.jsx
 
 'use client';
@@ -1348,5 +1346,414 @@ export default function LoginLayout({ children }) {
     </div>
 }
 .....................................................................................
+			 Parallel Routes
+.....................................................................................
+What is Parallel Routes?
 
+ Parallel routing allows you to simultaneously or conditionaly render one or more pages in the same layout.
+
+Parallel routing is used to implement complex routing pattrns.
+
+Use case 1: Render multiple pages into single layout
+.....................................................
+
+Steps:
+
+1.create folder called game
+src/app/game
+2.create page.js and layout.js
+export default function GameLayout(props) {
+    return <div id="gamelayout">
+         {props.children}
+    </div>
+}
+export default function GamePage(props) {
+    return <div>
+        <h1>Game Page</h1>
+    </div>
+}
+3.Create two different pages and render within "GameLayout"
+
+export default function GameLayout(props) {
+    return <div id="gamelayout">
+         {props.children}
+    </div>
+}
+
+in order to implement parallel routing, we need to create folder
+
+@folderName
+  |
+  page.js
+
+src/app/game/@team/page.js
+export default function TeamPage(props) {
+    return <h2>
+        Team Page
+    </h2>
+}
+Now if you test 
+http://localhost:3000/game/team
+The output would be page not found, the reason is you cant access team page publicly, 
+Team page must be injected into Team's layout as prop.
+
+
+src/app/game/@anaylitics/page.js
+export default function AnalyticsPage(props) {
+    return <h2>
+        Analytics  Page
+    </h2>
+}
+
+export default function GameLayout(props) {
+    return <div id="gamelayout">
+        {/* Game Page  */}
+        {props.children}
+        <hr />
+        {/* Team Page */}
+        {props.team}
+        {/* Analytics Page */}
+        {props.analytics}
+    </div>
+}
+.....................................................................................
+				Conditional Rendering-Parallel Routing
+.....................................................................................
+
+As of now, we have seen how to render multiple pages into a layout.
+Now we are going to discuss how to render page or pages into a layout based on condition.
+Slot  means portion of UI.
+We render a slot based on certain conditions, such as checkbox values,authentication states.
+
+Syntax:
+@AdminPanel
+@UserPanel
+export default function MyLayout(props) {
+  const isAdmin = getUser()
+   
+  return isAdmin ? props.AdminPanel : props.UserPanel
+
+}
+
+eg:
+
+src/app/panel/page.js
+export default function PanelPage(props) {
+    return <div>
+          <h1>Panel Page</h1>
+    </div>
+}
+
+src/app/panel/@AdminPanel/page.js
+export default function AdminPanelPage(props) {
+    return <div>
+          <h1>AdminPanelPage</h1>
+    </div>
+}
+
+
+src/app/panel/@UserPanel/page.js
+export default function UserPanelPage(props) {
+    return <div>
+          <h1>UserPanelPage</h1>
+    </div>
+}
+
+src/app/panel/layout.js
+
+export default function PanelLayout(props) {
+    const isAdmin = false 
+    return <div>
+         {props.children}
+         {isAdmin ? props.AdminPanel : props.UserPanel}
+    </div>
+}
+src/app/panel/page.js
+export default function PanelPage(props) {
+    return <div>
+          <h1>Panel Page</h1>
+    </div>
+}
+
+Points:
+ Parallel routes are created using named slots.
+ Slots are defined with the @folderName convention
+ Slots are passed as prop to the layout
+
+..................................................................................
+			   Loading UI 
+..................................................................................
+
+The special file loading.js helps to create meaningful loading UI with React suspense.
+With this convention, you can show an instant loading state from the server while the content of a route segment loads, the new content is automatically swapped in once rendering is completed.
+
+steps:
+src/app/dashboard/layout.js
+export default function DashBoardLayout(props) {
+    return <>
+      {props.children}
+    </>
+}
+src/app/dashboard/loading.js
+export default function Loading() {
+    // You can add any UI inside Loading, including a Skeleton.
+    return <h2>🌀 Loading...</h2>;
+}
+src/app/dashboard/components/greeter.jsx
+
+export default function Greeter(props){
+   return <>
+     <h1>Hello</h1>
+   </>
+}
+
+src/app/dashboard/page.js
+import React  from 'react';
+
+const Welcome = React.lazy(() => {
+    return new Promise((resolve, reject) => {
+        //lazy loading component: here greeter to be loaded async , meaning that this component to be available only after 5000 ms,
+        //during 5000 ms  , we need to show some Spinner,thats where loading.js code 
+        //to be used
+        setTimeout(resolve, 8000, import('./components/greeter'))
+    })
+});
+
+export default function DashboardPage(props) {
+    return <>
+      <h1>Dashboard Page</h1>
+      <Welcome/>
+    </>
+}
+
+Component Structure:
+
+ <Layout>
+   <Supsense fallback={<Loading/>}
+	<Page/>
+   </Suspense>
+ </Layout>
+....................................................................................
+	Putting loading status within page : overriding existing loading.js code
+
+Can we add Loader via Suspense Manually,
+ Yes, we can add, alway local Suspense takes priority.
+
+export default function DashboardPage(props) {
+    return <>
+        <h1>Dashboard Page</h1>
+        {/* <Welcome /> */}
+
+        <Suspense fallback={<h1>Loading.....</h1>}>
+            <Welcome />
+        </Suspense>
+    </>
+}
+Recommendation:
+ Use the loading.js convention always for route segments as Next.js optimizes this functionality.
+...................................................................................
+			Streaming
+...................................................................................
+What is Streaming?
+ Before understanding what is streaming, we need to understand how SSR works and its limiatation
+ Streaming is going to enchance the SSR limiations.
+
+Steps Involved In SSR:
+.....................
+
+1.First , all data for a given page is fetched on the server.
+
+2.The server then renders the HTML page 
+
+3.Once the HTML is ready, the server will send HTML,CSS,javascript for the page are sent to the client.
+
+4.NonInteractive user interface is shown using the generated HTML and CSS In browser
+
+5.Finally React, Hydrates,the user interface to make it interactive
+
+
+TTFB: Time to First Byte:
+........................
+Time to First Byte (TTFB) refers to the time between the browser requesting a page and when it receives the first byte of information from the server. This time includes DNS lookup and establishing the connection using a TCP handshake and SSL handshake if the request is made over HTTPS
+
+
+FCP :First Contentfull Paint
+The First Contentful Paint (FCP) metric measures the time from when the page starts loading to when any part of the page's content is rendered on the screen
+
+TTI
+Time to Interactive (TTI) is a non-standardized web performance 'progress' metric defined as the point in time when the last Long Task finished and was followed by 5 seconds of network and main thread inactivity.21-Feb-2023
+
+These steps are sequentinal and blocking, meaning that the server only render HTML for a page once all the data has been fetched. 
+And on the client side React can only hydrate the UI once the code for all components in the page has been downloaded..
+
+this is traditional process, which degrades the app loading performance
+.....................................................................................
+		  How to improve loading performance
+....................................................................................
+
+SSR with React and Next.js helps improve the perceived loading performance by showing a non interactive page to the user as soon as possible.
+
+Only HTML can be sent once the data fetching is over.
+
+
+Streaming allows you to break down the page's HTML into smaller chunks and progressively send those chunks from the server to the client.
+
+This enables part of the page to be displayed sooner, without waiting for all the data to load before any UI can be rendered.
+
+How to break down into chunks?
+
+  React mental model is component driven, each component we can treat as chunk.
+
+eg:
+  if a component have priority or that dont rely on data can be sent first (eg layouts),so the react can hydration eariler....
+ if components has less priority, or depends data to be sent later...
+
+How to implement streaming?
+ You have to split code into segments
+
+1.static code which does not depend on data
+2.dynamic code which depends on data.
+
+if you wrap any component with "Suspense Boundary" which is async, can be rendered later.
+
+if the component relays on data fetching, delays with timers, delays with network connections......
+
+Streaming Component:
+....................
+
+export default function Product(props) { 
+   <section>
+    <nav><a href="product.html"><a></nav>
+    <Suspense fallback={<h1>loading....}>
+	 <ProductDetails/>
+     <Suspense>
+   <section>
+	
+}
+
+Through suspense we can enable streaming....
+
+1.Streaming server rendering: Progressively rendering html from the server to the client
+
+2.Selective Hydration 
+    React prioritizes what components to make interactive first based on user interaction.
+.....................................................................................
+			 Error Handling
+....................................................................................
+
+The error.js file convention allows you to handle runtime errors in nested routes.
+
+By default Nextjs , wraps your components /pages/layouts within ErrorBoundary only...
+
+if you want to customize the error messages, we can add error.js within the route of app or within nested route.
+
+Create ERROR ui tailored to secific segements using the file system hierarchy to adjust granualrity.
+
+...................................................................................
+				Route Error Handler
+....................................................................................
+
+app
+ |
+ page.js
+ layout.js
+ dashboard
+    |
+    page.js
+    layout.js
+    error.js
+
+error.js
+ It automatically creates ReactBoundary that wraps a nested child segment or page compoent
+  <Layout>
+  
+    <ErrorBoundary fallback={<Error/>}
+	<Layout>
+		<Page/>
+        </Layout>
+    </ErrorBoundary>
+  </Layout>
+
+ error components are "client components"
+
+error.js
+
+'use client'; //Error Component must be client component
+
+export default function Error(props) {
+    return <div>
+        <h2>Something went Wrong!</h2>
+    </div>
+}
+
+How to access the error information within error Component?
+ The error component has prop
+
+
+'use client'; //Error Component must be client component
+
+export default function Error(props) {
+    console.log(props)
+    return <div>
+        <h2>Error Page</h2>
+        <h3>{props.error.message}</h3>
+    </div>
+}
+
+Recovery from the errors:
+
+How to recover the errors due to some to network failure...
+
+
+'use client'; //Error Component must be client component
+
+export default function Error(props) {
+    console.log(props)
+    return <div>
+        <h2>Error Page</h2>
+        <h3>{props.error.message}</h3>
+        <button onClick={() => {
+            props.reset()
+        }}>Reset</button>
+    </div>
+}
+.....................................................................................
+			How to add Error handler at root
+.....................................................................................
+
+		 Errors bubble up
+..................................................................................
+Errors bubble up to the nearest parent error boundary. This means an error.js file will handle errors for all its nested child segments. More or less granular error UI can be achieved by placing error.js files at different levels in the nested folders of a route.
+
+src/app/error.js
+
+
+'use client'; //Error Component must be client component
+
+export default function Error(props) {
+    console.log(props)
+    return <div>
+        <h2>Error Page</h2>
+        <h3>{props.error.message}</h3>
+        <button onClick={() => {
+            props.reset()
+        }}>Reset</button>
+    </div>
+}
+....................................................................................
+			How to handle layout errors
+....................................................................................
+
+error.js boundaries dont catch errors thrown in layout.js or template.js components of the same segement.
+
+To handle errors within  a specific layout or template , place an error.js file in the parents layout segment.
+
+src/app/error.js
+
+src/app/dashboard
+      -page.js
+      -layout.js
+      -error.js
+
+here dashboard layout errors are not handled by dashboard's error handler,rather its parent error.js file only..
 
