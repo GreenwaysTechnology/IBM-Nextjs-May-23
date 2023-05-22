@@ -1757,3 +1757,184 @@ src/app/dashboard
 
 here dashboard layout errors are not handled by dashboard's error handler,rather its parent error.js file only..
 
+To handle root layout errors, Next provides another file called "global-error.js" file must be used
+....................................................................................
+			  Data Fetching and API development
+....................................................................................
+
+Data Fetching:
+..............
+
+Data fetching from the server components or clients are possible.
+
+In server components we can use "fetch" api directly.
+fetch is promise powered so , you can use fetch with async await....
+
+
+Eg: Data fetching in server components:
+.......................................
+
+import { Suspense } from "react"
+
+//function to get data
+async function getTodos() {
+    const url = `https://jsonplaceholder.typicode.com/todos`
+    const res = await fetch(url)
+    if (!res.ok) {
+        throw new Error('data is not available')
+    }
+    return res.json()
+}
+function Loading() {
+    // You can add any UI inside Loading, including a Skeleton.
+    return <h2>🌀 Loading...</h2>;
+}
+export default async function TodosPage() {
+    const todos = await getTodos()
+    return <div>
+        <h1>Todos Page</h1>
+        {/* enables streaming */}
+        <Suspense fallback={<Loading/>}>
+            <ul>
+                {todos.map(todo => {
+                    return <li>{todo.title}</li>
+                })}
+            </ul>
+        </Suspense>
+    </div>
+}
+.....................................................................................
+			 Data fetching in Client Comonents
+....................................................................................
+Pattern : 1 Using fetch api itself...
+'use client';
+
+async function getUsers() {
+    const url = `https://jsonplaceholder.typicode.com/users`
+    const res = await fetch(url)
+    if (!res.ok) {
+        throw new Error('data is not available')
+    }
+    return res.json()
+}
+export default  async function User(){
+    const users = await getUsers()
+    console.log(users)
+    return <div>
+        <h1>User</h1>
+        <div>
+            {users.map(user=>{
+                return <h2>{user.username}</h2>
+            })}
+        </div>
+    </div>
+}
+
+Pattern 2  Using 'use' hook:
+............................
+use is designed to provide much the programming model as "async/await" while still working inside regular(non-async) function components and other hooks.
+Similar to async functions in javascript, the runtime for use maintains an internal state machine to suspend and resume; but from the perspective of the component author, it looks and feels like sequenicail function.
+
+As of now use hook is still experimental. not yet stablized/released.
+
+SyntaxL
+function getData() {
+    return Promise.resolve('Hello Promise')
+}
+
+export default function PostPage() {
+    const result = use(getData())
+    return <div>
+        <h1>Post Page</h1>
+    </div>
+}
+
+Pattern 3:Using swr feature
+
+'use client';
+
+// function getData() {
+//     return Promise.resolve('Hello Promise')
+// }
+
+// export default function PostPage() {
+//     const result = use(getData())
+//     return <div>
+//         <h1>Post Page</h1>
+//     </div>
+// }
+
+import useSWR from 'swr'
+
+function fetcher(...args) {
+    return fetch(...args).then(res => res.json())
+}
+
+export default function PostPage() {
+    const url = 'https://jsonplaceholder.typicode.com/posts'
+    const { data, error, isLoading } = useSWR(url, fetcher)
+    if (error) {
+        return <div><h1>Failed to return</h1></div>
+    }
+    if (isLoading) return <div>Loading....</div>
+    return <div>
+        {
+            data.map(post => {
+                return <h4>
+                    {post.title}
+                </h4>
+            })
+        }
+    </div>
+}
+.....................................................................................
+			Caching  in Data fetching
+.....................................................................................
+In next js Caching is enabled by default.
+
+Pre-Request caching: 
+ fetch
+By default , all fetch requests are cached and deduplicated automatically.
+This means that if you make the request twice , the second request will resue the result from the first request.
+
+How to revalidate the cache?
+ if want to revalidate the cache every request, you can use 
+
+ fetch('url',{next:{revalidate:0}}
+ or 
+ fetch('url',{cache:'no-store'});
+.....................................................................................
+			 API development
+.....................................................................................
+
+Next provides a layer called "api" layer
+
+api layer is used to write our own rest api or graphql api.
+
+As of now api communication (data fetching) logic of third party , we have done inside either server components or client components.
+
+There are two roles of api layer:
+
+1.integrating third party api 
+2.writing our own apis
+...................................................................................
+				Route Handler -REST api 
+...................................................................................
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
