@@ -1851,6 +1851,8 @@ export default function PostPage() {
 
 Pattern 3:Using swr feature
 
+npm install swr
+
 'use client';
 
 // function getData() {
@@ -1921,11 +1923,294 @@ There are two roles of api layer:
 				Route Handler -REST api 
 ...................................................................................
 
+Route  handlers are used to create REST api in next js.
+As part of the we can have 
+-User interface
+  app/
+   page.js     /
+   layout.js
+   api
+    |
+    route.js  /api
+
+page.js
+  =>contains react component which represents User interface
+
+route.js
+  => contains rest end points
+
+Resources:
+  Resource is nothing but domain domain models
+
+eg:
+Cart 
+Product
+Customer
+Payment
+
+How to create apis based on resources?
+
+ src/app/api/
+     product
+       route.js
+     customer
+	route.js
 
 
 
+route.js
+  Inside route.js we write route handlers.
 
- 
+export async function HTTPVerb(request){}
+
+eg:
+export async function GET(request){}
+
+Supported HTTP Verb:
+ GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS
+if un supported method is called, Next js will return a 405 method not allowed response.
+
+Object supported:
+1.NextRequest  for handling incoming request
+2.NextResponse for handling responses
+
+eg:
+src/app/api/route.js
+import { NextResponse } from "next/server";
+
+//rest api
+export  async function GET(request) {
+    //send response
+    return NextResponse.json({ message: 'welcome to api' })
+}
+
+Resources based mapping:
+
+src/app/api/customers/route.js
+
+CURD api mapping:
+import { NextResponse } from "next/server";
+
+//rest api
+//GET 
+export  async function GET(request) {
+    //send response
+    return NextResponse.json({ message: 'CUSTOMERS GET' })
+}
+//POST 
+export  async function POST(request) {
+    //send response
+    return NextResponse.json({ message: 'CUSTOMERS POST' })
+}
+//PUT
+export  async function PUT(request) {
+    //send response
+    return NextResponse.json({ message: 'CUSTOMERS PUT' })
+}
+//DELETE REQUEST
+export  async function DELETE(request) {
+    //send response
+    return NextResponse.json({ message: 'CUSTOMERS DELETE' })
+}
+....................................................................................
+SUB resources:dynamic api route
+................................
+
+src/app/api/customers/[id]/route.js
+import { NextResponse } from "next/server";
+//GET 
+export  async function GET(request) {
+    //send response
+    return NextResponse.json({ message: 'CUSTOMERS GET BY ID' })
+}
+...................................................................................
+			Route Handler talks to third party apis
+
+Next js api route can talk to other apis which might be microservices or plain rest api or graphql api...
+
+eg:
+src/app/api/albums/route.js
+import { NextResponse } from "next/server";
+
+//rest api
+export async function GET(request) {
+    //use fetch api to talk to rest end points
+    const url = 'https://jsonplaceholder.typicode.com/albums'
+    const res = await fetch(url)
+    const albums = await res.json();
+        //send response
+    return NextResponse.json(albums)
+}
+.....................................................................................
+			 Getting data From api and bind user interface
+
+src/app/albums/page.js
+import { Suspense } from "react"
+
+async function getAlbums() {
+    const url = `http://localhost:3000/api/albums`
+
+    const res = await fetch(url)
+    if (!res.ok) {
+        throw new Error('data is not available')
+    }
+    return res.json()
+}
+function Loading() {
+    // You can add any UI inside Loading, including a Skeleton.
+    return <h2>🌀 Loading...</h2>;
+}
+export default async function AlbumsPage() {
+
+    const albums = await getAlbums()
+    return <div>
+        <h1>Albums Page</h1>
+        {/* enables streaming */}
+        <Suspense fallback={<Loading/>}>
+            <ul>
+                {albums.map(album => {
+                    return <li>{album.title}</li>
+                })}
+            </ul>
+        </Suspense>
+    </div>
+}
+....................................................................................
+			How to externalize the data
+.....................................................................................
+
+In the above example we have hardcoded the full url
+
+const url = `http://localhost:3000/api/albums`
+
+How to externalize the config data....
+
+We have file called ".env" file
+....................................................................................
+			  Environment Variables
+....................................................................................
+
+Next js comes with built in support for environment variables, which allows you make to your app more flexible.
+
+.env file syntax
+
+.env.environment
+
+.environment is "dev | prod | test"
+
+.env.development
+.env.production
+.env.test
+.env.local
+
+eg:
+rest-app -->Project root dir
+ |
+.env.local
+ API_HOST=localhost
+ API_PORT=3000
+ HOST=http://$API_HOST:$PORT 
+
+
+How to load env variables?
+async function getAlbums() {
+    // const url = `http://localhost:3000/api/albums`
+    const url = `${process.env.HOST}/api/albums`
+
+    const res = await fetch(url)
+    if (!res.ok) {
+        throw new Error('data is not available')
+    }
+    return res.json()
+}
+.....................................................................................
+			 How to read Request payload
+.....................................................................................
+
+request.json method is used to extract body which sent by the client
+
+export  async function POST(request) {
+    const customer = await request.json()
+    console.log(customer)
+    //send response
+    return NextResponse.json({ message: 'CUSTOMERS POST' })
+}
+
+How to post data to the rest api(third party)?
+
+.env.local
+JSON_PLACEHOLDER=https://jsonplaceholder.typicode.com
+
+src/app/api/alubum/route.js
+import { NextResponse } from "next/server";
+
+const url = `${process.env.JSON_PLACEHOLDER}/albums`
+
+//rest api
+export async function GET(request) {
+    //use fetch api to talk to rest end points
+    const res = await fetch(url)
+    const albums = await res.json();
+    //send response
+    return NextResponse.json(albums)
+}
+export async function POST(request) {
+    const album = await request.json()
+    //post data to json place holder api
+    const res = await fetch(url, {
+        method: 'POST', headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(album)
+    })
+    //send response
+    const newAlbum = await res.json();
+    return NextResponse.json(newAlbum)
+}
+
+import { NextResponse } from "next/server";
+
+const url = `${process.env.JSON_PLACEHOLDER}/albums`
+
+//rest api
+export async function GET(request) {
+    //use fetch api to talk to rest end points
+    const res = await fetch(url)
+    const albums = await res.json();
+    //send response
+    return NextResponse.json(albums)
+}
+export async function POST(request) {
+    const album = await request.json()
+    //post data to json place holder api
+    const res = await fetch(url, {
+        method: 'POST', headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(album)
+    })
+    //send response
+    const newAlbum = await res.json();
+    return NextResponse.json(newAlbum)
+}
+
+export async function PUT(request) {
+    const { id, userId, title } = await request.json()
+    console.log(id,userId,title)
+    //console.log(ablumn)
+    //post data to json place holder api
+    const res = await fetch(`${url}/${id}`, {
+        method: 'PUT', headers: {
+            'Content-Type': 'application/json'
+            , body: {
+                id, userId, title
+            }
+        }
+    })
+    //send response
+    const updatedAlbum = await res.json()
+    return NextResponse.json(updatedAlbum)
+}
 
 
 
