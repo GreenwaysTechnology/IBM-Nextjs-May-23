@@ -25,8 +25,11 @@ export async function POST(request) {
 }
 
 export async function PUT(request) {
+
     const { id, userId, title } = await request.json()
-    console.log(id,userId,title)
+    console.log(id, userId, title)
+    console.log(request.json())
+
     //console.log(ablumn)
     //post data to json place holder api
     const res = await fetch(`${url}/${id}`, {
@@ -42,30 +45,15 @@ export async function PUT(request) {
     return NextResponse.json(updatedAlbum)
 }
 
-export async function DELETE(request) {
-    const {id} =  await request.json()
-    console.log(id)
-    //console.log(ablumn)
-    // //post data to json place holder api
-    //  await fetch(`${url}/${id}`, {
-    //     method: 'DELETE', headers: {
-    //         'Content-Type': 'application/json'
-    //     }
-    // })
-    //send response
-    return NextResponse.json({message:'deleted'})
-}
 
-// export async function DELETE(request) {
-//     const ablumn = await request.json()
-//     console.log(ablumn)
-//     //console.log(ablumn)
-//     // //post data to json place holder api
-//     //  await fetch(`${url}/${id}`, {
-//     //     method: 'DELETE', headers: {
-//     //         'Content-Type': 'application/json'
-//     //     }
-//     // })
-//     //send response
-//     return NextResponse.json({message:'deleted'})
-// }
+export async function DELETE(request) {
+    const { id } = await request.json()
+    //post data to json place holder api
+    await fetch(`${url}/${id}`, {
+        method: 'DELETE', headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    //send response
+    return NextResponse.json({"message": `album ${id} deleted`})
+}

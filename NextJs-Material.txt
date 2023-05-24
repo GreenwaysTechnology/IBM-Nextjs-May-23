@@ -2211,9 +2211,24 @@ export async function PUT(request) {
     const updatedAlbum = await res.json()
     return NextResponse.json(updatedAlbum)
 }
-.....................................................................................
-			   GraphQL
-....................................................................................
+
+In order to work delete operation , we need to down grade
+ "dependencies": {
+    "next": "13.2.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}
+next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+    experimental: {
+        appDir: true,
+    },
+}
+
+module.exports = nextConfig
+
 
 				GraphQL
 .....................................................................................
@@ -2372,27 +2387,793 @@ query - a read only fetch
 mutation- a write followed by read
 subscription- a long live request that fetches data in response to source events
 ..................................................................................
+			 Graphql Query language - Spec
+.....................................................................................
 
+Client Side development:
+ In this module, we are going to learn how to send request(graphql) request to graphql server..
 
+Syntax:
 
+1.Selection set
 
+selectionSet: {
+ Selection
+}
 
+Selection:
+ fields
+ Fragment Spread
+ inline fragament
 
+SelectionSet : What type of operations (query,mutation,subscription)
 
+Read:
 
+query  {
+    fields
+    Fragment Spread
+   inline fragament
+}
+fields: could be what are the data you are expecting from the server
+eg:User information 
+in the server user information could be many fields
+ firstName,lastName,id,age,city,state,status,pic,stars,ranking....
 
+field List :
+ You are asking the server that , hey i want only these fields
 
+query  {
+   id
+   firstName  ====>POST request=========/url===>GraphQLServer==>Execute api
+   lastName   <====response would be json
+}
 
+Create,Update,Remove: Mutation
 
+mutation createUser(params) { 
+  user
+}
+mutation updateUser(params) { 
+  user
+}
+mutation removeUser(params) { 
+  user
+}
 
+Streaming: (read with Streaming)
 
+subscription  getStockQuote (params){
+  name
+  price
+  qty
+}
+.....................................................................................
+			  How to learn graphql query language
 
+in order to work with query language we need graphql server, if you dont have local graphql server we can use mock apis
 
+Fake api servers
+https://graphqlzero.almansi.me/#example-top
+https://countries.trevorblades.com/
+ 
+Tools to test graphql end points
 
+1.Client tools
+ playground
+ postman
 
+Core concepts:
+=>fields
+=>arguments
+=>aliases
+=>fragments
+=>variables
+=>directives
+=>Mutations
+=>inline fragments
 
+Fiedls:
+  At its simplest, GraphQL is about asking for specific fields on objects.
 
+Lets start by looking at a very simple query and the result we get when we run it.
 
+Simple Query:
 
+query {
+  countries {
+    code
+    name
+  }
+}
+Sample response:
+  "data": {
+    "countries": [
+      {
+        "code": "AD",
+        "name": "Andorra"
+      },
+      {
+        "code": "AE",
+        "name": "United Arab Emirates"
+      },
+      {
+        "code": "AF",
+        "name": "Afghanistan"
+      },
+      {
+        "code": "AG",
+        "name": "Antigua and Barbuda"
+      },
+      {
+        "code": "AI",
+        "name": "Anguilla"
+      },
+      {
+        "code": "AL",
+        "name": "Albania"
+      },
+      {
+        "code": "AM",
+        "name": "Armenia"
+      },
+      {
+        "code": "AO",
+        "name": "Angola"
+      },
+      {
+        "code": "AQ",
+        "name": "Antarctica"
+      },
+      {
+        "code": "AR",
+        "name": "Argentina"
+      },
+      {
+        "code": "AS",
+        "name": "American Samoa"
+      }
+]
 
+Short cut:
+ we dont need to specificy query keyword
+{
+  countries {
+    code
+    name
+  }
+}
+More fields:
+ How do we know that the api has more fields?
+In the playground, we can see docs in the playground
 
+ {
+    countries {
+        name
+        code
+        native
+        capital
+        currency
+    }
+}
+
+Inside Graphql server, the above fields are encapulated inside object.
+Object property may nest other objects.
+
+How to query nested values?
+
+ {
+    countries {
+        name
+        code
+        native
+        capital
+        currency
+        continent {
+            name
+        }
+    }
+}
+
+We can use method name syntax
+ query getAllCountries {
+    countries {
+        name
+        code
+        native
+        capital
+        currency
+        continent {
+            name
+        }
+    }
+}
+We will see where method syntax is useful.
+.....................................................................................
+			   Arguments
+.....................................................................................
+
+What if i want to get data based  on some condition or conditions?
+
+Synax:
+
+ query getCountryByCode {
+     country(code:"US"){
+          name
+          capital
+          currency
+          phone
+     }
+     continent(code:"AS") {
+         name
+     }
+}
+Here code is variable , "US" is value
+
+Arg can be static or dynamic arg
+
+Static means passing hardcoded value..
+
+ query getCountryByCode {
+     country(code:"US"){
+          name
+          capital
+          currency
+          phone
+     }
+     continent(code:"AS") {
+         name
+     }
+}
+...................................................................................
+			 Dynamic parameters and arguments -Variables
+...................................................................................
+
+Variables:
+ Variables are place holders to have dynamic values.
+ In case of clients app,you may select values from the drop down or from text field
+
+Variables are introduced in graphql via "$VariableName"
+
+Steps: 
+1.replace static values in the query with $variable
+2.Declare the variable ($VariableName) as part of the query header
+
+Static
+ query getCountryByCode {
+     country(code:"US"){
+          name
+          capital
+          currency
+          phone
+     }
+     
+}
+Dynamic
+ query getCountryByCode($variableName:DataType) {
+     country(code:$variableName){
+          name
+          capital
+          currency
+          phone
+     }
+     
+}
+ query getCountryByCode($code:ID!) {
+     country(code:$code){
+          name
+          capital
+          currency
+          phone
+     }
+     
+}
+How to pass values to this Query?
+ Via Query variables in playground.
+
+{
+    "code":"IN"
+}
+
+Response:
+{
+    "data": {
+        "country": {
+            "name": "India",
+            "capital": "New Delhi",
+            "currency": "INR",
+            "phone": "91"
+        }
+    }
+}
+...................................................................................
+			Default Arg
+....................................................................................
+
+What if i dont send the query variable as input, we can substitue default value
+
+ query getCountryByCode($code:ID!="IN") {
+     country(code:$code){
+          name
+          capital
+          currency
+          phone
+     }
+     
+}
+
+if you pass  country code, you will get response
+{
+    "code":"US"
+}
+Response:
+
+{
+    "data": {
+        "country": {
+            "name": "United States",
+            "capital": "Washington D.C.",
+            "currency": "USD,USN,USS",
+            "phone": "1"
+        }
+    }
+}
+if you dont pass country code
+{
+    "data": {
+        "country": {
+            "name": "India",
+            "capital": "New Delhi",
+            "currency": "INR",
+            "phone": "91"
+        }
+    }
+}
+....................................................................................
+			Short cut :without method Name 
+ query ($code:ID!="IN") {
+     country(code:$code){
+          name
+          capital
+          currency
+          phone
+     }
+     
+}
+Recommendation : having method name for more readablity.
+
+ query getCountryByCode($code:ID!="IN") {
+     country(code:$code){
+          name
+          capital
+          currency
+          phone
+     }
+     
+}
+What can be parameter or arg types?
+
+1.Can be primitives(Scalar types) - ID,String,Int,Float,Enums
+2.Can be complex types - Object Types
+
+Input type:
+ Input is special complex type, used to represent input parameters.
+ Input types are very usefull incase of mutation
+
+I want to get Language information.
+
+query getlanguageInfo($filter:LanguageFilterInput) {
+    languages(filter:$filter) {
+        code 
+        name
+        native
+        rtl
+    }
+}
+
+After execution , you will get all language info
+
+{
+    "data": {
+        "languages": [
+            {
+                "code": "af",
+                "name": "Afrikaans",
+                "native": "Afrikaans",
+                "rtl": false
+            },
+            {
+                "code": "am",
+                "name": "Amharic",
+                "native": "አማርኛ",
+                "rtl": false
+            },
+            {
+                "code": "ar",
+                "name": "Arabic",
+                "native": "العربية",
+                "rtl": true
+            },
+            {
+                "code": "ay",
+                "name": "Aymara",
+                "native": "Aymar",
+                "rtl": false
+            },
+            {
+                "code": "az",
+                "name": "Azerbaijani",
+                "native": "Azərbaycanca / آذربايجان",
+                "rtl": false
+            },
+            {
+                "code": "be",
+                "name": "Belarusian",
+                "native": "Беларуская",
+                "rtl": false
+            },
+            {
+                "code": "bg",
+                "name": "Bulgarian",
+                "native": "Български",
+                "rtl": false
+            }
+]
+
+After giving query variable:
+
+{
+    "filter": {
+        "code" : {
+            "eq" : "en"
+        }
+    }
+}
+
+Response :
+{
+    "data": {
+        "languages": [
+            {
+                "code": "en",
+                "name": "English",
+                "native": "English",
+                "rtl": false
+            }
+        ]
+    }
+}
+...................................................................................
+			Multiple arg variables
+...................................................................................
+
+Multiple Variables:
+....................
+
+query getProfile($id:Int,$withFriends:Boolean=false) {
+
+     user(id:$id,withFriends:$withFriends) {
+	  name
+          pic
+      }
+}
+Passing values:
+{"id":1 , "withFriends" : true}
+{"id":2 }
+.....................................................................................	
+                       Alises
+....................................................................................
+
+Filed Alises gives dummy name for keys..
+
+Syntax:
+ without Aliases:
+
+query { 
+  user(id:1){
+    id 
+    name
+  }
+}
+Response:
+{
+  "data": { 
+    "user": {
+	"id":1
+         "name":"Subramanian"
+    }
+  }
+}
+
+With Alises:
+
+query { 
+  subramanian:user(id:1){
+    id 
+    name
+  }
+}
+Response:
+{
+  "data": { 
+    "subramanian": {
+	"id":1
+         "name":"Subramanian"
+    }
+  }
+}
+eg:
+query getlanguageInfo($filter:LanguageFilterInput) {
+    englishLanguage:languages(filter:$filter) {
+        code 
+        name
+        native
+        rtl
+    }
+}
+{
+    "data": {
+        "englishLanguage": [
+            {
+                "code": "en",
+                "name": "English",
+                "native": "English",
+                "rtl": false
+            }
+        ]
+    }
+}
+.....................................................................................
+			Fragements : Resuable Selection Set
+.....................................................................................
+
+Without fragement:
+...................
+
+query {
+   user(id:2){
+      friends {
+	id 
+        name
+        pic
+      }
+      mutualfriends {
+	id 
+        name
+        pic
+      }
+   }
+}
+Here friends and mutual friends are having same set of data
+...................................................................................
+With Fragements:
+...............
+query {
+   user(id:2){
+      friends {
+	...friendsFields
+      }
+      mutualfriends {
+	...friendsFields
+      }
+   }
+}
+
+fragement friendsFields on User{
+        id 
+        name
+        pic
+}
+
+eg:
+query GetA1AndA2Countries {
+    a1Countries:countries {
+        ...countryInfo
+    }
+    a2Countries:countries {
+        ...countryInfo
+    }
+}
+fragment countryInfo on Country {
+    name
+    capital
+}
+
+Response:
+"data": {
+        "a1Countries": [
+            {
+                "name": "Andorra",
+                "capital": "Andorra la Vella",
+                "__typename": "Country"
+            },
+            {
+                "name": "United Arab Emirates",
+                "capital": "Abu Dhabi",
+                "__typename": "Country"
+            },
+            {
+                "name": "Afghanistan",
+                "capital": "Kabul",
+                "__typename": "Country"
+            }
+	 ],
+	 "a2Countries": [
+            {
+                "name": "Andorra",
+                "capital": "Andorra la Vella",
+                "__typename": "Country"
+            },
+            {
+                "name": "United Arab Emirates",
+                "capital": "Abu Dhabi",
+                "__typename": "Country"
+            },
+            {
+                "name": "Afghanistan",
+                "capital": "Kabul",
+                "__typename": "Country"
+            }
+	 ]
+}
+.....................................................................................				   Directives
+....................................................................................
+Directives are built in functions which provides some utilites.
+Directives starts with @DirectiveName(arg:Type)
+
+Built in directives
+@include(if:Boolean)
+  conditionally include this field in the result if the arg is true
+@skip(if:Boolean)
+   conditionally exclude this field in the result if the arg is true
+
+Syntax:
+query getProfile($id:Int,$withFriends:Boolean=false){ 
+	
+     user(id:$id) {
+	name
+	pic
+	friends @include(if:$withFriends){
+		name
+	}
+     }  
+      
+
+}
+
+Query Variable:
+ {"id":5, "withFriends":true}
+
+eg:
+query getLanguage($code:ID!,$rtl:Boolean!) {
+    language(code:$code){
+        name 
+        native @include(if:$rtl)
+    }
+}
+
+Query Variable:
+{
+    "code":"en",
+    "rtl":true
+}
+
+Response:
+{
+    "data": {
+        "language": {
+            "name": "English",
+            "native": "English"
+        }
+    }
+}			
+
+False condition:
+Query Variable:
+{
+    "code":"en",
+    "rtl":false
+}		
+Response:
+{
+    "data": {
+        "language": {
+            "name": "English"
+        }
+    }
+}
+....................................................................................
+				Mutations
+...................................................................................
+
+How to send payload to create,update,delete
+IN REST
+
+POST=>CREATE
+PUT=>UPDATE
+DELETE=>REMOVE
+GET=>READ
+
+Mutations 
+........
+
+mutation is keyword used to create,update,remove...
+
+API url :
+https://graphqlzero.almansi.me/api
+
+CREATE:
+.......
+eg:
+mutation CreatePost(
+  $input: CreatePostInput!
+) {
+  createPost(input: $input) {
+    id
+    title
+    body
+  }
+}
+
+Query Variables:
+{
+  "input": {
+    "title": "A Very Captivating Post Title",
+    "body": "Some interesting content."
+  }
+}
+
+Response:
+
+{
+    "data": {
+        "createPost": {
+            "id": "101",
+            "title": "A Very Captivating Post Title",
+            "body": "Some interesting content."
+        }
+    }
+}
+........................
+
+Update :
+mutation UpdatePost($id: ID!,$input: UpdatePostInput!) {
+  updatePost(id: $id, input: $input) {
+    id
+    body
+  }
+}
+Query Variable
+
+{
+  "id": 1,
+  "input": {
+    "body": "Some updated content."
+  }
+}
+
+Response
+{
+  "updatePost": {
+    "id": "1",
+    "body": "Some updated content."
+  }
+}
+....................................................................................
+Delete :
+
+mutation RemovePost($id: ID!) {
+  deletePost(id: $id)
+}
+Query Variable:
+
+{
+  "id": 101
+}
+Response:
+{
+  "deletePost": true
+}
+...................................................................................
+			 Server side : GraphQL schema Language
+....................................................................................
