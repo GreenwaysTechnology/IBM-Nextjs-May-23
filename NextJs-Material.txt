@@ -3169,7 +3169,7 @@ Query Variable:
 
 {
   "id": 101
-}
+}.
 Response:
 {
   "deletePost": true
@@ -3177,3 +3177,1245 @@ Response:
 ...................................................................................
 			 Server side : GraphQL schema Language
 ....................................................................................
+
+How to build rest api?
+  According to rest spec,The problems(domain) are represented as "resources"
+
+Resource represents a Object which expose data and api.
+eg:CustomerResource,OrderResource,ProductResource.
+
+Resources are identified by URL 
+eg:/
+	/api/products and Methods are "GET/POST/PUT/DELETE"
+
+How to build graphql applications?
+ According to graphql specifications problems are represented as "Schema"
+Schema represents domain models.
+Domain Models are represetented as Objects | models | entity.
+
+eg:
+ Customer,Order,Product.
+
+In Programming side schema is represented as "Objects and its relationship"
+Object and its relationship forms "graph" - Object Graph
+.....................................................................................
+How to start write graphql apps?
+   
+   In order to begin with, we need learn there is language called "SDL" - Schema definition language.
+
+SDL Core concepts:
+.................
+
+1.Type system.
+ The type system defines the Platform independent data types and variables which describe what data can be quired by client.
+
+
+Flow of client and server
+
+query getUserData {
+   user {
+     name ===>SDL============>Server==>SDL===Entity==>Biz logic(Services)===>Data 									sources
+  }
+}
+
+Both client and server talks via common language called "SDL" language
+
+SDL provides language independent abstraction.
+
+	     SDL-----|JAVA/js/python/c++ ...
+...................................................................................	
+			How to write schema
+....................................................................................
+
+The schema file is saved as "fileName.schema".
+
+Schema is collection of Object types that contain fields.Each field has a type of its own.
+A field type can be scalar(primitives Such as Int,String) or it can another object type.eg User can have Address type.
+
+We need to with key word called "type"
+
+type TypeName {
+  field:Datatype
+}
+
+In SDL, there is root type, every type is dervied from the root type only.
+
+Root Type:
+
+type schema{
+  query:Query
+  mutation:Mutation
+  subscription:Subscription
+}
+Query Type: contains read api
+type Query{
+ #api
+ greet:String
+ name:String
+}
+type Mutation {
+ #api
+ save(param:String):String
+}
+type Subscription {
+ #api
+ getStockQuote:String
+}
+....................................................................................
+SDL Defines its language and platform independant data types
+
+1.scallar types
+2.Custom types/Reference Types/Object types.
+
+1.Scallar types
+ Scallares are primitive types in your language.
+
+1.Int -32 bit signed integer
+2.String-UTF-8 char sequence
+3.Boolean - true or false
+4.Float - signed Double
+5.ID(Serialized String) - A unique identifier.
+
+2.Custom types
+ Similar to classes in Object oriented languages like c++ ,java,C#,Typescript
+
+type User{
+  id:ID
+  firstName:String
+  lastName:String
+  age:Int
+  points:Float
+  status:Boolean
+}
+
+Object can have other objects : Nested Object
+  HAS-A relationship or Depedency Injection
+
+
+type Address {
+  city:String
+  state:String
+  zipCode:String
+}
+
+type User{
+  id:ID
+  firstName:String
+  lastName:String
+  age:Int
+  points:Float
+  status:Boolean
+  address:Address
+}
+...................................................................................
+			Handling null and not null
+..................................................................................
+
+Client Query with data
+
+{
+  name =====> response {name:'Subramanian'}
+}
+
+
+Client Query without data
+
+{
+  name =====> response {name:null}
+}
+null values some times create issues in the client applications, what if i want to return always value without null.
+
+I dont want null value for a given field? How to force the field must have data or must not have null?
+
+=>Not null fields
+
+Syntax:
+  fieldName:Type!
+! =>Not null
+
+type Address {
+  city:String!
+  state:String
+  zipCode:String
+}
+
+type User{
+  id:ID!
+  firstName:String!
+  lastName:String!
+  age:Int
+  points:Float
+  status:Boolean
+  address:Address
+}
+....................................................................................
+			Collection - List of similar Values
+..................................................................................
+
+A field may have one or more values
+
+fieldName:[DataType]
+ Here Datatype can be scalar type or Object type
+
+fieldName:[String] | [Int] | [Float]
+fieldName:[Address] [Order] [Items]
+
+Collection can also be not null
+
+fieldName:[String]! | [Int]! | [Float]!
+fieldName:[Address]! [Order]! [Items]!
+.....................................................................................
+			Query Type
+.....................................................................................
+
+Query is collection of apis
+Query api can accept input and return values
+
+No parameter: only Return
+..........................
+field:Type
+
+eg:
+
+type Query {
+  name:String
+  user:User
+  users:[User]
+}
+Client side:Query language 
+{
+  name
+}
+{
+  user {
+   id
+   name
+  }
+}
+{
+  users {
+     user { 
+	id 
+	 name
+     }
+  }
+}
+Parameters, And Return value:
+.............................
+field:Type
+
+type Query {
+   name(name:String,message:String):String
+   userById(id:ID):User
+   usersByCity(city:String):[User]!
+}
+.....................................................................................
+			 Advanced Types
+.....................................................................................
+
+=>Mutation
+=>Subscription
+=>Input
+=>Enum
+=>Union
+=>Interface
+
+Mutation:
+ Write and Read operations where as Query type is read only.
+
+Signature of the Mutation:
+
+type Mutation{
+  createUser(id:ID,name:String,lastName:String,age:Int):User
+  updateUser(id:ID,user:User):User
+  removeUser(id:ID):User
+}
+
+in the above example, more no parameters we need to pass, which makes your code more difficult to understand and read thats where we have new type called "INPUT" type.
+...................................................................................
+			  Input Types
+.................................................................................
+
+Input types are special object types that allow you to provide hierachical data as arguments to fields(as apposed to providing only flat scalar args).
+type Mutation{
+ #Flat scalar args
+  createUser(id:ID,name:String,lastName:String,age:Int):User
+}
+
+type Address {
+  city:String!
+  state:String
+  zipCode:String
+}
+
+type User{
+  id:ID!
+  firstName:String!
+  lastName:String!
+  age:Int
+  points:Float
+  status:Boolean
+  address:Address
+}
+
+input CreateUserInput{
+  id:ID!
+  name:String
+  lastName:String
+  age:Int
+}
+input CreateUserResponse{
+  id:ID!
+  name:String
+  lastName:String
+  age:Int
+}
+
+type Mutation{
+  createUser(userInput:CreateUserInput!):CreateUserResponse
+}
+...................................................................................
+			   Enums
+....................................................................................
+An Enum is similar to scalar types, but its legal values are defined in the schema
+
+enum Gender {
+  MALE
+  FEMALE
+  THIRD
+}
+How to use Enum
+
+
+type User{
+  id:ID!
+  firstName:String!
+  lastName:String!
+  gender:Gender
+  age:Int
+  points:Float
+  status:Boolean
+  address:Address
+}
+.....................................................................................
+			  Union and Interfaces
+....................................................................................
+Union:
+  Unions and interfaces abstract graphql types that enables a schema field to return one of multiple object types.
+
+union Media = Image | Video
+
+type Query {
+  getMedia:Media
+}
+
+Union type must not be scallar type values it must be always object
+
+ union Foo: String | Int => which is wrong
+.....................................................................................
+                        Interfaces
+.....................................................................................
+
+interface represents common fields that multiple objects can include.
+
+interface Book{ 
+  title:String!
+  author:String!
+}
+
+type TechnicalBook implments Book { 
+  title:String!
+  author:String!
+  X:String
+}
+
+
+type StoryBook implments Book { 
+  title:String!
+  author:String!
+  Y:String
+}
+....................................................................................
+			  Custom Scallar
+
+Graphql SDL provides basic core types - Int,String,Boolean,ID,Float
+What if i want other types like Date,Time
+
+How to define custom scalar?
+
+scalar Date
+
+type User{
+  id:ID!
+  firstName:String!
+  lastName:String!
+  gender:Gender
+  dob:Date
+  age:Int
+  points:Float
+  status:Boolean
+  address:Address
+}
+Date if you declare , you wont get date value, rather we need to write logic how date is represented in server side.
+....................................................................................
+			 Custom Directives
+....................................................................................
+directive @cacheControl(
+  maxAge: Int
+  scope: CacheControlScope
+) on FIELD_DEFINITION | OBJECT | INTERFACE
+
+Here we create @cacheControl directives, we need to write logic in the server side code..
+....................................................................................
+			GRAPHQL Application dev
+.....................................................................................
+
+Requirement:
+ 1.You must have SDL before starting any code
+
+Graphql application can be written in any language..
+
+Javascript implmentation (runtime is Node.js)
+
+1.graphql.js
+  =>Core framework written by facebook 
+  =>You can run standalone or on top of  web servers
+  =>Express.js is underlying framework
+2.Apollo
+   =>It is platform for building graphl apps called "SuperGraphs"
+   =>It is written on the top of express server with microservice developments.
+
+Components of Apollo(Graphql apps):
+
+1.Apollo Server
+2.Schema definitions - SDL
+3.Resolvers - Schema Implmenetation - where we write biz logic
+4.Datasources- Database or another rest api...
+.....................................................................................
+Apollo Project setup:
+.....................
+Apollo project can be started with typescript or plain javacript: Typescript is mostly recommended..
+
+E:\session\IBM\2023\May\NextJS\>mkdir apollo-gettingstarted
+E:\session\IBM\2023\May\NextJS>cd apollo-gettingstarted
+E:\session\IBM\2023\May\NextJS\apollo-gettingstarted> npm init --yes
+E:\session\IBM\2023\May\NextJS\apollo-gettingstarted> code .
+E:\session\IBM\2023\May\NextJS\apollo-gettingstarted> mkdir src
+
+Install depedencies:
+
+npm i @apollo/server graphql
+
+Typescript dependency:
+
+npm i --save-dev typescript @types/node
+
+create tsconfig.json
+{
+    "compilerOptions": {
+        "rootDirs": ["src"],
+        "outDir": "dist",
+        "lib":["es2020"],
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "types": ["node"]
+    }
+}
+
+script configuration:
+
+ "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "tsc",
+    "start": "npm run compile && node ./dist/index.js"
+  },
+
+write code inside src/index.ts
+console.log('welcome to Apollo Server')
+....................................................................................
+
+Steps:
+
+1.Define Schema
+2.Write Biz logic based on Schema - Resolvers
+3.Start Apollo Server
+4.Query data from the client.
+
+
+Define Schema:
+ Schema definition is represented as "Plain String"
+
+Steps:
+1.src/index.ts
+
+//Define schema
+const typeDefs=`
+#Simple Query which returns Hello World
+ type Query {
+    hello:String    
+ }
+`
+2.Biz logic : write biz logic for Query: resolover 
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        hello() {
+            return "Hello World"
+        }
+    }
+    //Mutation
+    
+    //Subscription
+}
+
+3.We need to deploy(Parse schema,bind resolvers)
+
+3.1. import ApolloServer  and create instance
+
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+3.2.Start web Container and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+How to test?
+http://localhost:4000/ 
+
+You can see there is playground provided by Apollo server by default
+
+query {
+  hello
+}
+
+Response:
+{
+  "data": {
+    "hello": "Hello World"
+  }
+}
+....................................................................................
+			Multiple Apis
+....................................................................................
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+
+//Define schema
+const typeDefs = `
+#Simple Query which returns Hello World
+ type Query {
+    hello:String
+    greet:String
+    hai:String    
+ }
+`
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        hello() {
+            return "Hello World"
+        },
+        hai() {
+            return 'Hai GraphQL'
+        },
+        greet() {
+            return 'Greet GraphQL'
+        }
+
+    }
+    //Mutation
+
+    //Subscription
+}
+
+//create instance of ApolloServer and pass schema , resolver as config
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+.....................................................................................
+			Object Types and Queries
+....................................................................................	import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+
+//Define schema
+const typeDefs = `
+#Simple Query which returns Hello World
+ 
+ type User {
+    id:ID
+    firstName:String
+    lastName:String
+    age:Int
+    points:Float
+    status:Boolean
+ }
+
+ type Query {
+   user:User
+ }
+`
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        user() {
+            //return object
+            return {
+                id: 1,
+                firstName: 'Subramanian',
+                lastName: 'Murugan',
+                age: 10,
+                points: 10.5,
+                status: true
+
+            }
+        }
+    }
+    //Mutation
+
+    //Subscription
+}
+
+//create instance of ApolloServer and pass schema , resolver as config
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+Testing:
+query {
+  user {
+    id
+    firstName
+    status
+  }
+}
+{
+  "data": {
+    "user": {
+      "id": "1",
+      "firstName": "Subramanian",
+      "status": true
+    }
+  }
+}
+.................................................................................
+			Collections
+................................................................................	
+src/mock-data/users.ts
+export const USERS: Array<any> = [{
+    id: 1,
+    firstName: 'Subramanian',
+    lastName: 'Murugan',
+    age: 10,
+    points: 10.5,
+    status: true
+
+},
+{
+    id: 2,
+    firstName: 'Geetha',
+    lastName: 'Subramanian',
+    age: 34,
+    points: 10.5,
+    status: true
+
+},
+{
+    id: 3,
+    firstName: 'Murugan',
+    lastName: 'Palanisamy',
+    age: 58,
+    points: 10.5,
+    status: true
+
+}
+]
+
+	
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+import { USERS } from "./mock-data/users.js"
+
+//Define schema
+const typeDefs = `
+#Simple Query which returns Hello World
+ 
+ type User {
+    id:ID
+    firstName:String
+    lastName:String
+    age:Int
+    points:Float
+    status:Boolean
+ }
+
+ type Query {
+   user:[User]
+ }
+`
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        user() {
+            //return object
+            return USERS
+        }
+    }
+    //Mutation
+
+    //Subscription
+}
+
+//create instance of ApolloServer and pass schema , resolver as config
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+....................................................................................
+			 Handling Args and Parameters
+...................................................................................
+How to handle args/parameters?
+ A Resolver function takes four positional args
+
+fun(parent,args,contextValue,info){
+
+
+}
+args it is variable going to hold parameters passed by clients.
+args value is going to be literal object
+How many parameters if you pass, all parameters are stored inside single literal object
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+import { USERS } from "./mock-data/users.js"
+
+//Define schema
+const typeDefs = `
+#Simple Query which returns Hello World
+ type Query {
+     hello(name:String):String
+ }
+`
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        hello(parent, args, contextValue, info) {
+            console.log(args)
+            const { name } = args
+            // return `Hello ${args.name}`
+            return `Hello ${name}`
+        }
+    }
+    //Mutation
+
+    //Subscription
+}
+
+//create instance of ApolloServer and pass schema , resolver as config
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+Testing:
+Dynamic variables
+query SayHello($name: String) {
+  hello(name: $name)
+}
+Query Variable
+{
+  "name": "Subramanian"
+}
+{
+  "data": {
+    "hello": "Hello Subramanian"
+  }
+}
+....................................................................................
+			Handling Complex Args and Parameters
+
+
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+import { USERS } from "./mock-data/users.js"
+
+//Define schema
+const typeDefs = `
+#Simple Query which returns Hello World
+ 
+ type User {
+    id:ID
+    firstName:String
+    lastName:String
+    age:Int
+    points:Float
+    status:Boolean
+ }
+ input UserResponseInput {
+    id:ID
+    firstName:String
+    lastName:String
+    age:Int
+    points:Float
+    status:Boolean
+ }
+ type Query {
+   users:[User]
+   userById(id:ID!):User
+ }
+`
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        users() {
+            //return object
+            return USERS
+        },
+        //here _ is just convention to skip the arg
+        userById(_, args) {
+            const { id } = args
+            //filter data based on id
+            return USERS.find(user => {
+                return user.id === +id
+            })
+        }
+    }
+    //Mutation
+
+    //Subscription
+}
+
+//create instance of ApolloServer and pass schema , resolver as config
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+Query:
+query Users($userByIdId: ID!) {
+  userById(id: $userByIdId) {
+    id
+    firstName
+    lastName
+  }
+}
+
+QueryVariable:
+{
+  "userByIdId": 2
+}
+Response:
+{
+  "data": {
+    "userById": {
+      "id": "2",
+      "firstName": "Geetha",
+      "lastName": "Subramanian"
+    }
+  }
+}
+
+if parameter does not match , it will return null value...
+.....................................................................................
+			Nested Data Structure
+.....................................................................................
+
+I have data Structure
+
+const users = [
+  { 
+   id:1,
+   name:'A',
+   email:'a@gmail.com'
+   address: {
+    city:'b',
+    state:'c'
+   }
+  }
+]
+
+Schema:
+//Define schema
+const typeDefs = `
+
+type User {
+   id:ID!
+   name:String
+   email:String
+   address:Address
+}
+type Address{
+    city:String
+    state:String
+}
+type Query {
+    users:[User]
+}
+
+In database world user and Address would have stored into different tables.
+CREATE Table users(id int,name varchar(10),email varchar(20,constraint c primaryKey(id))
+
+CREATE Table address(city varchar(20),state varchar(20),id references users id)
+...................................................................................
+Mock data:
+
+//Mock data
+const USERS = [{
+    id: 1,
+    name: 'A',
+    email: 'a@gmail.com'
+},
+{
+    id: 2,
+    name: 'B',
+    email: 'b@gmail.com'
+},
+{
+    id: 3,
+    name: 'C',
+    email: 'c@gmail.com'
+}
+
+]
+
+const ADDRESS = [{
+    city: 'Coimbatore',
+    state: 'TN',
+    id: 1 //linking field
+},
+{
+    city: 'BNG',
+    state: 'KA',
+    id: 2 //linking field
+},
+{
+    city: 'HYD',
+    state: 'TS',
+    id: 3 //linking field
+}]
+
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+
+//Mock data
+const USERS = [{
+    id: 1,
+    name: 'A',
+    email: 'a@gmail.com'
+},
+{
+    id: 2,
+    name: 'B',
+    email: 'b@gmail.com'
+},
+{
+    id: 3,
+    name: 'C',
+    email: 'c@gmail.com'
+}
+
+]
+
+const ADDRESS = [{
+    city: 'Coimbatore',
+    state: 'TN',
+    id: 1 //linking field
+},
+{
+    city: 'BNG',
+    state: 'KA',
+    id: 2 //linking field
+},
+{
+    city: 'HYD',
+    state: 'TS',
+    id: 3 //linking field
+}]
+
+//Define schema
+const typeDefs = `
+
+type User {
+   id:ID!
+   name:String
+   email:String
+   address:Address
+}
+type Address{
+    city:String
+    state:String
+}
+type Query {
+    users:[User]
+}
+`
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        users() {
+            //return object
+            return USERS
+        },
+    }
+    //Mutation
+
+    //Subscription
+}
+
+//create instance of ApolloServer and pass schema , resolver as config
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+Testing:
+query Users {
+  users {
+    id
+    name
+    email
+    address {
+      city
+    }
+  }
+}
+
+Response:
+{
+  "data": {
+    "users": [
+      {
+        "id": "1",
+        "name": "A",
+        "email": "a@gmail.com",
+        "address": null
+      },
+      {
+        "id": "2",
+        "name": "B",
+        "email": "b@gmail.com",
+        "address": null
+      },
+      {
+        "id": "3",
+        "name": "C",
+        "email": "c@gmail.com",
+        "address": null
+      }
+    ]
+  }
+}
+Here address is missing, that means address is only part of schema but not part of the resolver
+
+How to link users with Address?
+...................................................................................
+			  Resolver Chains
+..................................................................................
+Resolver chain means coimbing results of one resolve with in nested resolver
+
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from '@apollo/server/standalone'
+
+//Mock data
+const USERS = [{
+    id: 1,
+    name: 'A',
+    email: 'a@gmail.com'
+},
+{
+    id: 2,
+    name: 'B',
+    email: 'b@gmail.com'
+},
+{
+    id: 3,
+    name: 'C',
+    email: 'c@gmail.com'
+}
+
+]
+
+const ADDRESS = [{
+    city: 'Coimbatore',
+    state: 'TN',
+    id: 1 //linking field
+},
+{
+    city: 'BNG',
+    state: 'KA',
+    id: 2 //linking field
+},
+{
+    city: 'HYD',
+    state: 'TS',
+    id: 3 //linking field
+}]
+
+//Define schema
+const typeDefs = `
+
+type User {
+   id:ID!
+   name:String
+   email:String
+   address:Address
+}
+type Address{
+    city:String
+    state:String
+}
+type Query {
+    users:[User]
+}
+`
+//Define Resolver: biz logic
+const resolvers = {
+    //Query Implmentation
+    Query: {
+        users() {
+            //return object
+            return USERS
+        },
+    },
+    //Resolver Chain
+    User: {
+        address(parent, args, contextValue, info) {
+            console.log(parent)
+            //connect parent with child: connect this address with user 
+            return ADDRESS.find(address => {
+                //linking field === parent field
+                return address.id === parent.id
+            })
+        }
+    }
+    //Mutation
+
+    //Subscription
+}
+
+//create instance of ApolloServer and pass schema , resolver as config
+
+const server = new ApolloServer({
+    typeDefs: typeDefs,
+    resolvers: resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+Testing:
+query Users {
+  users {
+    id
+    name
+    email
+    address {
+      city
+    }
+  }
+}
+
+Response:
+{
+  "data": {
+    "users": [
+      {
+        "id": "1",
+        "name": "A",
+        "email": "a@gmail.com",
+        "address": {
+          "city": "Coimbatore"
+        }
+      },
+      {
+        "id": "2",
+        "name": "B",
+        "email": "b@gmail.com",
+        "address": {
+          "city": "BNG"
+        }
+      },
+      {
+        "id": "3",
+        "name": "C",
+        "email": "c@gmail.com",
+        "address": {
+          "city": "HYD"
+        }
+      }
+    ]
+  }
+}
+
+
+
