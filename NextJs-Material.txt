@@ -4416,6 +4416,1189 @@ Response:
     ]
   }
 }
+.....................................................................................
+....................................................................................
+				Mutations
+.....................................................................................
+
+How to send data for insert,update,remove.
+
+type Mutation {
+  //add apis
+}
+
+src/index.ts
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from "@apollo/server/standalone"
+
+//Define Schema
+const typeDefs = `
+
+type User {
+ id:ID!
+ name:String
+ email:String
+}
+
+type Query {
+  users:[User]
+  user(id:ID!):User
+}
+
+input UserInput{
+    id:ID!
+    name:String
+    email:String
+}
+
+type AddUserMutationResponse {
+    code:String!
+    success:Boolean!
+    message:String!
+}
+
+type Mutation {
+   createUser(userInput:UserInput):AddUserMutationResponse
+}
+`
+
+const USERS = [{
+    id: 1,
+    name: 'A',
+    email: 'a@gmail.com'
+},
+{
+    id: 2,
+    name: 'B',
+    email: 'b@gmail.com'
+},
+{
+    id: 3,
+    name: 'C',
+    email: 'c@gmail.com'
+}
+
+]
+//Define Resolver
+const resolvers = {
+    //Query
+    Query: {
+        users() {
+            return USERS
+        },
+        user(_, args) {
+            return USERS.find(user => user.id === +args.id)
+        }
+    },
+    //Mutation
+    Mutation: {
+        //add new User
+        createUser(_, args) {
+            //call api to insert users
+            USERS.push(args.userInput)
+            console.log(args.userInput)
+            return {
+                code: '200',
+                success: true,
+                message: 'New User added!'
+            }
+        }
+    }
+
+}
+
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+})
+//start the webserver and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+Request:
+........
+mutation ($userInput:UserInput) {
+    createUser(userInput: $userInput) {
+      code
+      message
+      success
+    }
+}
+
+Variable:
+{
+  "userInput": {
+    "id": "100",
+    "name": "Foo",
+    "email":"foo@gmail.com"
+  }
+}
+Response:
+{
+  "data": {
+    "createUser": {
+      "code": "200",
+      "message": "New User added!",
+      "success": true
+    }
+  }
+}
+
+Coding Challange:
+ You have to update User info
+ You have to remove User Info
+.....................................................................................
+			  Union Types
+.....................................................................................
+
+How to resolve unions and interfaces?
+
+ union Media = Book | Movie
+
+ type Query {
+   allMedia:[Media] # This includes Both Book and Movie Objects
+ }
+
+Syntax
+query {
+  ...on Book { }
+  ...on Movie {} 
+}
+
+How Apollo server returns data based on Type?
+
+  __resolveType function
+
+    Media: {
+        __resolveType(obj, contextValue, info) {
+            if (obj.movietitle) {
+                return 'Movie' // Type Name Must be String
+            }
+            if (obj.author) {
+                return 'Book' //Type Name Must Be String
+            }
+            return null
+        }
+    },
+
+eg:
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from "@apollo/server/standalone"
+
+//Define Schema
+const typeDefs = `
+ #Product OutStock or Availablity or Product
+
+ #Product Name is Candy
+ type Candy{
+   id:String!
+   name:String!
+   price:Float
+ }
+ #Status Types
+ type OutOfStock {
+    restockDate:String
+ }
+ type RegionUnAvailablity {
+    availableRegions: [String!]
+ }
+
+ #union type
+ union CandyResult = Candy | OutOfStock | RegionUnAvailablity
+
+ type Query {
+    candy(id:String!):CandyResult
+ }
+
+ `
+ //data
+const CANDIES = [
+    {
+        "id": "gummy-bears",
+        "name": "Haribo Gummy Bears",
+        "price": 100.89,
+       
+    },
+    {
+        "id": "sour-patch",
+        "name": "Sour-Patch Kids",
+        "price": 45.89
+    },
+    {
+        "id": "wonka-nerds",
+        "name": "Wonka Nerds",
+        "restockDate": "2022-04-10"
+    },
+    {
+        "id": "swirly-pops",
+        "name": "Swirly Pops",
+        "availableRegions": ["Coimbatore", "Chennai", "Banaglore"]
+    }
+]
+//Define Resolver
+const resolvers = {
+
+    //Resolver Type Resolution function
+    CandyResult: {
+        __resolveType(obj, contextValue, info) {
+            //we need to pass unquie fields
+            if (obj.restockDate) {
+                return 'OutOfStock' // Type Name Must be String
+            }
+            if (obj.availableRegions) {
+                return 'RegionUnAvailablity'
+            }
+            if (obj.price) {
+                return 'Candy'
+            }
+            return null
+        }
+    },
+
+    //Query
+    Query: {
+        candy(_, args) {
+            return CANDIES.find(candy => {
+                return candy.id === args.id
+            })
+        }
+    }
+
+}
+
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+})
+//start the webserver and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+
+Testing:
+Query
+
+query Candy($candyId: String!) {
+  candy(id: $candyId) {
+    ... on Candy {
+      id
+      name
+      price
+    }
+    ... on OutOfStock {
+      restockDate
+    }
+    ... on RegionUnAvailablity {
+      availableRegions
+    }
+  }
+}
+
+Query variables:
+{
+  "candyId":"swirly-pops"
+}
+Response:
+{
+  "data": {
+    "candy": {
+      "availableRegions": [
+        "Coimbatore",
+        "Chennai",
+        "Banaglore"
+      ]
+    }
+  }
+}
+Query
+{
+  "candyId":"wonka-nerds"
+}
+Response:
+{
+  "data": {
+    "candy": {
+      "restockDate": "2022-04-10"
+    }
+  }
+}
+Query:
+{
+  "candyId":"gummy-bears"
+}
+{
+  "data": {
+    "candy": {
+      "id": "gummy-bears",
+      "name": "Haribo Gummy Bears",
+      "price": 100.89
+    }
+  }
+}
+...................................................................................
+				interface
+.....................................................................................
+An interface also provides program to super type approach similar to union type...
+An interface provides a set of fields that multiple objects types can include
+
+type Query {
+  myQuery:InterfaceType
+}
+
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from "@apollo/server/standalone"
+
+//Define Schema
+const typeDefs = `
+interface Book {
+    title: String!
+    author: Author!
+}
+  
+type Course {
+    name:String
+}
+type Author {
+    name:String
+}
+type Textbook implements Book {
+    title: String!
+    author: Author!
+    courses: [Course!]!
+}
+type ColoringBook implements Book {
+    title: String!
+    author: Author!
+    colors: [String!]!
+}
+  
+type Query {
+  books: [Book!]!
+}
+ `
+//  const BOOKS = [{
+//     title: 'Graphql',
+//     courses: [{
+//         name: 'IT'
+//     }]
+// }]
+const BOOKS = [{
+    title: 'Graphql',
+    colors:['Green'] 
+}]
+
+//Define Resolver
+const resolvers = {
+
+    //Query
+    Query: {
+        books() {
+            return BOOKS;
+        }
+    },
+    Book: {
+        __resolveType(book, contextValue, info) {
+            console.log(book)
+            if (book.courses) {
+                return 'Textbook' //must return Implementaton type in String
+            }
+            if (book.colors) {
+                return 'ColoringBook'
+            }
+            return null
+        }
+    }
+
+
+}
+
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+})
+//start the webserver and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+Testing:
+query getBooks {
+  books {
+    __typename
+    title
+    ... on Textbook {
+      courses {
+        name
+      }
+    }
+    ... on ColoringBook {
+      colors
+    }
+  }
+}
+
+Response:
+{
+  "data": {
+    "books": [
+      {
+        "__typename": "ColoringBook",
+        "title": "Graphql",
+        "colors": [
+          "Green"
+        ]
+      }
+    ]
+  }
+}
+.....................................................................................
+			....................................................................................
+				Context and ContextValue
+....................................................................................
+
+Context is Object - can be used to share information across application.
+Context information can be accessed inside resolvers,plugins,__resolverType with convention name called "contextValue".
+
+Contex Object:
+=>To data based connection info
+=>Auth and authorization details
+=>Data Sources for fetching Data..
+etc...
+
+context Function:
+ It is function which is part of "ApolloServer"
+
+const MyContext{
+   token:String
+   dataSource:String
+}
+
+const server = new ApolloServer<MyContext>({
+    typeDefs,
+    resolvers,
+})
+
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    },
+    context: async()=>{
+	return {
+	   token:'....',
+           dataSource:'...'
+	
+        }
+    }
+})
+
+
+ Query: {
+        books(parent,args,contextValue,info) {
+            contextValue.token...
+        }
+    },
+
+eg:
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from "@apollo/server/standalone"
+
+interface MyContext {
+    greeting?: String
+}
+
+//Define Schema
+const typeDefs = `
+type Query {
+  hello:String  
+}
+
+`
+//Define Resolver
+const resolvers = {
+    //Query
+    Query: {
+        hello(parent, args, contextValue, info) {
+            return contextValue.greeting
+        }
+    }
+}
+
+const server = new ApolloServer<MyContext>({
+    typeDefs,
+    resolvers,
+})
+//start the webserver and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    },
+    context: async ({ req, res }) => {
+        return {
+            greeting: 'Hello GraphQL context'
+        }
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+query Query {
+  hello
+}
+
+Response:
+{
+  "data": {
+    "hello": "Hello GraphQL context"
+  }
+}
+.....................................................................................
+
+.....................................................................................
+				Data Sources & Context
+...................................................................................
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from "@apollo/server/standalone"
+
+//Define Schema
+const typeDefs = `
+ type Book {
+    title:String
+    author:String
+ }
+ type Query {
+    books:[Book]
+ }
+
+`
+
+const BOOKS = [{
+    title: 'GraphQl in Action',
+    author: 'A'
+},
+{
+    title: 'Apollo in Action',
+    author: 'B'
+},
+{
+    title: 'Typescript in Action',
+    author: 'C'
+},
+{
+    title: 'Rest in Action',
+    author: 'D'
+}
+
+]
+//Data source 
+export class BookDataSource {
+    getBooks() {
+        return BOOKS
+    }
+   //save
+   //update
+   //remove
+}
+
+interface MyContext {
+    dataSources: {
+        booksAPI: BookDataSource
+    }
+}
+
+
+//Define Resolver
+const resolvers = {
+    //Query
+    Query: {
+        books(parent, args, contextValue, info) {
+            return contextValue.dataSources.booksAPI.getBooks()
+        }
+    }
+}
+
+const server = new ApolloServer<MyContext>({
+    typeDefs,
+    resolvers,
+})
+//start the webserver and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    },
+    context: async ({ req, res }) => {
+        return {
+            dataSources: {
+                booksAPI: new BookDataSource()
+            }
+        }
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+
+Request:
+query {
+  books {
+    title
+    author
+  }
+}
+
+Response:
+{
+  "data": {
+    "books": [
+      {
+        "title": "GraphQl in Action",
+        "author": "A"
+      },
+      {
+        "title": "Apollo in Action",
+        "author": "B"
+      },
+      {
+        "title": "Typescript in Action",
+        "author": "C"
+      },
+      {
+        "title": "Rest in Action",
+        "author": "D"
+      }
+    ]
+  }
+}
+
+Code Challange:
+Add all the code inside Datasource class
+=>addBook
+=>removeBook
+=>UpdateBook
+=>findBookById
+....................................................................................
+...................................................................................
+			Data sources-Fetching Data From Rest
+...................................................................................
+
+Steps:
+in order to connect with rest api... i am going to expose local rest api
+
+1.Setup local rest api
+
+npm install -g json-server
+
+2.create db.json file in the project root dir
+{
+    "posts": [
+        {
+            "id": 1,
+            "title": "json-server",
+            "author": "typicode"
+        }
+    ],
+    "comments": [
+        {
+            "id": 1,
+            "body": "some comment",
+            "postId": 1
+        }
+    ],
+    "profile": {
+        "name": "typicode"
+    },
+    "books": [
+        {
+            "title": "Harry Potter and the Chamber of Secrets",
+            "author": "J.K. Rowling"
+        },
+        {
+            "title": "Jurassic Park",
+            "author": "Michael Crichton"
+        },
+        {
+            "title": "Title - index 2",
+            "author": "Author - index 2"
+        },
+        {
+            "title": "Title - index 3",
+            "author": "Author - index 3"
+        },
+        {
+            "title": "Title - index 4",
+            "author": "Author - index 4"
+        },
+        {
+            "title": "Title - index 5",
+            "author": "Author - index 5"
+        }
+    ]
+}
+
+3.Run Rest api server
+json-server --watch db.json
+
+Test:
+http://localhost:3000/books
+.....................................................................................
+				
+GraphQL setup:
+.............
+Steps:
+1.Create Service/API class in order to communicate Rest api
+ Apollo provides a special wrapper class to connect with rest apis
+
+npm install @apollo/datasource-rest --save
+
+2.Create Your own Rest api class and sub class of RESTDataSource
+
+import { RESTDataSource } from "@apollo/datasource-rest"
+
+//type class 
+export class Book {
+    title: string;
+    author: string;
+}
+
+//Rest Data Source
+export class BooksAPI extends RESTDataSource {
+    constructor() {
+        super()
+        this.baseURL = "http://localhost:3000/"
+    }
+    //apis:biz api
+    async getBooks() {
+        //http://localhost:3000/books
+        return this.get<Book[]>(`books`)
+    }
+    //save book
+    async postBook(book) {
+        return this.post<any>(`books`, book).then(resp => resp.data)
+    }
+}
+
+3.Create Context Type and inject into server
+
+//Context Type:
+interface ContextValue {
+    dataSources: {
+        booksAPI: BooksAPI
+    }
+}
+const server = new ApolloServer<ContextValue>({
+    typeDefs,
+    resolvers,
+})
+//start the webserver and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    },
+    context: async () => {
+        return {
+            dataSources: {
+                booksAPI: new BooksAPI()  // dataSources.booksAPI.getBooks()
+            }
+        }
+    }
+})
+
+4.Schema : To fetch data
+//Define Schema
+const typeDefs = `
+type Book {
+    title:String
+    author:String
+}
+
+type Query {
+    "GET all Books from the Rest api server"
+    books:[Book!]
+}
+
+`
+5.Resolver:
+//Define Resolver
+const resolvers = {
+    //Query
+    Query: {
+        async books(parent, args, contextValue, info) {
+            const { dataSources } = contextValue
+            return dataSources.booksAPI.getBooks()
+        }
+    }
+}
+
+6.Test Server:
+
+
+query {
+  books {
+    title
+  }
+}
+Response:
+{
+  "data": {
+    "books": [
+      {
+        "title": "Harry Potter and the Chamber of Secrets"
+      },
+      {
+        "title": "Jurassic Park"
+      },
+      {
+        "title": "Title - index 2"
+      },
+      {
+        "title": "Title - index 3"
+      },
+      {
+        "title": "Title - index 4"
+      },
+      {
+        "title": "Title - index 5"
+      }
+    ]
+  }
+}
+................................................................................
+   
+Post and Update 
+...............
+
+import { RESTDataSource } from "@apollo/datasource-rest"
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from "@apollo/server/standalone"
+
+
+//type class 
+export class Book {
+    id?: number;
+    title?: string;
+    author?: string;
+}
+
+export class MutationResponse {
+    status: string
+    data?: Book
+}
+
+//Rest Data Source
+export class BooksAPI extends RESTDataSource {
+    constructor() {
+        super()
+        this.baseURL = "http://localhost:3000/"
+    }
+    //apis:biz api
+    async getBooks() {
+        //http://localhost:3000/books
+        return this.get<Book[]>(`books`)
+    }
+    async book(id: number) {
+        return this.get<Book>(`books/${id}`)
+    }
+    //save book
+    async postBook(book: Book) {
+        return this.post<Book>(`books`, { body: book }).then(resp => resp)
+    }
+    async updateBook(bookId: number, book: Book) {
+        return this.put<Book>(`books/${bookId}`, { body: book }).then(resp => resp)
+    }
+}
+
+//Context Type:
+interface ContextValue {
+    dataSources: {
+        booksAPI: BooksAPI
+    }
+}
+
+
+//Define Schema
+const typeDefs = `
+type Book {
+    id:Int
+    title:String
+    author:String
+}
+
+#Query
+type Query {
+    "GET all Books from the Rest api server"
+    books:[Book!]
+    book(id:Int!):Book
+}
+
+
+#Mutations
+
+input BookInput{
+    id:Int
+    title:String!
+    author:String!
+}
+
+type Mutation {
+    "POST new Book to the REST API server"
+    addBook(input:BookInput):Book
+    updateBook(id:ID!,input:BookInput):Book
+}
+
+`
+//Define Resolver
+const resolvers = {
+    //Query
+    Query: {
+        async books(parent, args, contextValue, info) {
+            const { dataSources } = contextValue
+            return dataSources.booksAPI.getBooks()
+        },
+        //Book By Id 
+        async book(parent, args, contextValue, info) {
+            const { dataSources } = contextValue
+            const id = +args.id
+            return dataSources.booksAPI.book(id)
+        }
+
+    },
+    Mutation: {
+        //create Book
+        async addBook(parent, args, contextValue, info) {
+            const { input } = args
+            return contextValue.dataSources.booksAPI.postBook(input)
+        },
+        // //update Book
+        async updateBook(parent, args, contextValue, info) {
+            const { id, input } = args
+            return contextValue.dataSources.booksAPI.updateBook(id, input)
+        },
+        // //remove Book
+        // async removeBook(parent, args, contextValue, info) {
+
+        // }
+    }
+}
+
+const server = new ApolloServer<ContextValue>({
+    typeDefs,
+    resolvers,
+})
+//start the webserver and deploy
+const { url } = await startStandaloneServer(server, {
+    listen: {
+        port: 4000
+    },
+    context: async () => {
+        return {
+            dataSources: {
+                booksAPI: new BooksAPI()  // dataSources.booksAPI.getBooks()
+            }
+        }
+    }
+})
+console.log(`Apollo Server is Ready at ${url}`)
+
+....
+
+mutation($updateBookId: ID!, $input: BookInput)  {
+    updateBook(id: $updateBookId, input: $input) {
+        title
+        author
+    }
+}
+.....................................................................................
+			Graphql Integration with NextJS 13
+....................................................................................
+
+Apollo has released "Apollo client Lib with Next.js 13".
+
+Lib:
+ This lib now is under experimental, in future it will be stablished..
+
+@apollo/experimental-nextjs-app-support.
+
+Next 13 Compoent types
+
+1.Server Component
+2.Client Component
+
+Apollo provides wrapper for both components...
+
+How to start?
+
+1.Create next.js 13 version project 
+
+2.install the dependencies
+  
+  npm install @apollo/client@alpha  @apollo/experimental-nextjs-app-support
+
+3.Configuration:
+ How to talk to GraphQL server?
+  GraphQl end point , GraphQL client object
+
+For ServerComponent
+
+projectRootDir/lib/client.js
+
+import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
+import { registerApolloClient } from "@apollo/experimental-nextjs-app-support/rsc";
+
+export const { getClient } = registerApolloClient(() => {
+  return new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      // uri: "https://countries.trevorblades.com",
+      uri: "http://localhost:4000/"
+    }),
+  });
+});
+
+4.Query Data from the GraphQL server...
+
+import { getClient } from "../../lib/client";
+import { gql } from "@apollo/client";
+
+//Query creation using "gql function from the Apollo Client"
+const query = gql`query getBooks {
+      books {
+         author
+         title
+      }        
+}`
+export default async function Page() {
+  const { data: { books } } = await getClient().query({ query });
+  return <main>
+    <ul>
+      {books.map(book => {
+        return <li>{book.author} - {'title'} - {book.title} </li>
+      })}
+    </ul>
+  </main>
+}
+..................................................................................
+		 Client components and graphql integration
+.................................................................................
+
+Since Client Components uses "hooks", so we need separte configuration for client.
+
+For ClientComponent
+
+projectRootDir/lib/apollo-wrapper.js
+
+
+"use client";
+
+import {
+  ApolloClient,
+  ApolloLink,
+  HttpLink,
+  SuspenseCache,
+} from "@apollo/client";
+
+import {
+  ApolloNextAppProvider,
+  NextSSRInMemoryCache,
+  SSRMultipartLink,
+} from "@apollo/experimental-nextjs-app-support/ssr";
+
+
+function makeClient() {
+  const httpLink = new HttpLink({
+       uri: "https://countries.trevorblades.com",
+  });
+
+  return new ApolloClient({
+    cache: new NextSSRInMemoryCache(),
+    link:
+      typeof window === "undefined"
+        ? ApolloLink.from([
+            new SSRMultipartLink({
+              stripDefer: true,
+            }),
+            httpLink,
+          ])
+        : httpLink,
+  });
+}
+
+function makeSuspenseCache() {
+  return new SuspenseCache();
+}
+
+export function ApolloWrapper({ children }) {
+  return (
+    <ApolloNextAppProvider
+      makeClient={makeClient}
+      makeSuspenseCache={makeSuspenseCache}
+    >
+      {children}
+    </ApolloNextAppProvider>
+  );
+}
+
+2.create folder where we render client component which communicates graphql end point
+
+src/app/client/layout.js
+import { ApolloWrapper } from "../../../lib/apollo-wrapper"
+
+export default function ClientLayout({ children }) {
+    return <ApolloWrapper>{children}</ApolloWrapper>
+}
+
+src/app/client/page.js
+
+"use client";
+
+import { gql } from "@apollo/client";
+import { useSuspenseQuery } from "@apollo/experimental-nextjs-app-support/ssr";
+
+//automatic cach invalidation option 
+export const dynamic = "force-dynamic";
+
+//query 
+const query = gql `query getCountries {
+    countries {
+      name
+    }          
+}`
+export default function PollPage() {
+    //parse and send request to graphql server
+    
+    const { data: { countries } } = useSuspenseQuery(query);
+    countries.map(country => {
+        console.log(country.name)
+    })
+    return <main>
+        <ul>
+            {countries.map(country => {
+                return <li>{country.name}</li>
+            })}
+        </ul>
+    </main>
+};
+
+testing:
+http://localhost:3000/client
+
+
+
+
+
+
+
+
+
+
+
 
 
 

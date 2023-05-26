@@ -1,85 +1,62 @@
+import { RESTDataSource } from "@apollo/datasource-rest";
 import { ApolloServer } from "@apollo/server";
-import { startStandaloneServer } from '@apollo/server/standalone';
-//Mock data
-const USERS = [{
-        id: 1,
-        name: 'A',
-        email: 'a@gmail.com'
-    },
-    {
-        id: 2,
-        name: 'B',
-        email: 'b@gmail.com'
-    },
-    {
-        id: 3,
-        name: 'C',
-        email: 'c@gmail.com'
+import { startStandaloneServer } from "@apollo/server/standalone";
+//Type Class
+export class Book {
+}
+//Rest Data Source
+export class BooksAPI extends RESTDataSource {
+    constructor() {
+        super();
+        this.baseURL = "http://localhost:8080/";
     }
-];
-const ADDRESS = [{
-        city: 'Coimbatore',
-        state: 'TN',
-        id: 1 //linking field
-    },
-    {
-        city: 'BNG',
-        state: 'KA',
-        id: 2 //linking field
-    },
-    {
-        city: 'HYD',
-        state: 'TS',
-        id: 3 //linking field
-    }];
-//Define schema
+    //apis:biz api
+    async getBooks() {
+        //http://localhost:3000/books
+        return this.get(`books`);
+    }
+    //save book
+    async postBook(book) {
+        return this.post(`books`, book).then(resp => resp.data);
+    }
+}
+//Define Schema
 const typeDefs = `
+type Book {
+    title:String
+    author:String
+}
 
-type User {
-   id:ID!
-   name:String
-   email:String
-   address:Address
-}
-type Address{
-    city:String
-    state:String
-}
 type Query {
-    users:[User]
+    "GET all Books from the Rest api server"
+    books:[Book!]
 }
+
 `;
-//Define Resolver: biz logic
 const resolvers = {
-    //Query Implmentation
+    //Query
     Query: {
-        users() {
-            //return object
-            return USERS;
-        },
-    },
-    //Resolver Chain
-    User: {
-        address(parent, args, contextValue, info) {
-            console.log(parent);
-            //connect parent with child: connect this address with user 
-            return ADDRESS.find(address => {
-                //linking field === parent field
-                return address.id === parent.id;
-            });
+        async books(parent, args, contextValue, info) {
+            const { dataSources } = contextValue;
+            return dataSources.booksAPI.getBooks();
         }
     }
-    //Mutation
-    //Subscription
 };
-//create instance of ApolloServer and pass schema , resolver as config
 const server = new ApolloServer({
-    typeDefs: typeDefs,
-    resolvers: resolvers
+    typeDefs,
+    resolvers,
 });
+//start the webserver and deploy
 const { url } = await startStandaloneServer(server, {
     listen: {
         port: 4000
+    },
+    context: async () => {
+        return {
+            dataSources: {
+                booksAPI: new BooksAPI() // dataSources.booksAPI.getBooks()
+            }
+        };
     }
 });
 console.log(`Apollo Server is Ready at ${url}`);
